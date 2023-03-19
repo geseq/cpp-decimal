@@ -1,7 +1,6 @@
 #include "udecimal.hpp"
 
 #include <cassert>
-#include <iostream>
 
 using udecimal::Decimal;
 
@@ -50,9 +49,6 @@ void testFromExp() {
     f = Decimal::FromExp(123, 0);
     assert(f.toString() == "123");
 
-    // f = Decimal::fromInt(123456789012, 9);
-    // assert(f.toString() == "123");
-
     f = Decimal::FromExp(123, -1);
     assert(f.toString() == "12.3");
 
@@ -74,9 +70,8 @@ void testParse() {
     }
 
     try {
-        auto val = Decimal("123,456");
-        std::cout << val.toString() << std::endl;
-        // assert(false);
+        auto val = Decimal(",123456");
+        assert(false);
     } catch (std::invalid_argument& e) {
         // Expected
     }

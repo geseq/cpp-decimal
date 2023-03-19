@@ -3,7 +3,6 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
-#include <iostream>
 #include <iterator>
 #include <stdexcept>
 #include <string>
@@ -27,7 +26,7 @@ class Decimal {
     static std::runtime_error errTooLarge;
     static std::runtime_error errFormat;
 
-    // ParseFloat creates a Decimal from an float64, rounding at the 8th decimal place
+    // Creates a Decimal from a double, rounding at the 8th decimal place
     Decimal(double f) {
         if (std::isnan(f)) {
             throw std::invalid_argument("invalid input");
@@ -50,27 +49,28 @@ class Decimal {
         if (s.find_first_of("eE") != std::string::npos) {
             double f = std::stod(s);
             fp = static_cast<uint64_t>(f * scale);
+            return;
+        }
+
+        std::size_t period = s.find('.');
+        uint64_t i, f;
+        if (period == std::string::npos) {
+            i = std::stoull(s);
+            if (i > MAX) {
+                throw std::overflow_error("number too large");
+            }
+            fp = i * scale;
         } else {
-            std::size_t period = s.find('.');
-            uint64_t i, f;
-            if (period == std::string::npos) {
-                i = std::stoull(s);
+            if (period > 0) {
+                i = std::stoull(s.substr(0, period));
                 if (i > MAX) {
                     throw std::overflow_error("number too large");
                 }
-                fp = i * scale;
-            } else {
-                if (period > 0) {
-                    i = std::stoull(s.substr(0, period));
-                    if (i > MAX) {
-                        throw std::overflow_error("number too large");
-                    }
-                }
-                std::string fs = s.substr(period + 1);
-                fs += std::string(max(0, static_cast<int>(nPlaces - fs.length())), '0');
-                f = std::stoull(fs.substr(0, nPlaces));
-                fp = i * scale + f;
             }
+            std::string fs = s.substr(period + 1);
+            fs += std::string(max(0, static_cast<int>(nPlaces - fs.length())), '0');
+            f = std::stoull(fs.substr(0, nPlaces));
+            fp = i * scale + f;
         }
     }
 
