@@ -19,7 +19,8 @@ constexpr uint64_t const_pow() {
     return result;
 }
 
-// Decimal is a decimal precision number (supports 11.7 digits).
+// Decimal is a decimal precision unsigned number (defaults to 11.8 digits).
+// IMPORTANT: this is not designed to be used for signed decimals.
 template <int nPlaces = 8>
 class Decimal {
    public:
