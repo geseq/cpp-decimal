@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <stdexcept>
@@ -9,20 +10,31 @@
 
 namespace udecimal {
 
+template <int base, int exponent>
+constexpr uint64_t const_pow() {
+    uint64_t result = 1;
+    for (int i = 0; i < exponent; ++i) {
+        result *= base;
+    }
+    return result;
+}
+
 // Decimal is a decimal precision number (supports 11.7 digits).
+template <int nPlaces = 8>
 class Decimal {
    public:
     uint64_t fp = 0;
 
     Decimal(uint64_t fp = 0) : fp(fp) {}
 
-    // the following constants can be changed to configure a different number of decimal places - these are
-    // the only required changes.
-    static constexpr int nPlaces = 8;
-    static constexpr uint64_t scale = 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10;
-    static constexpr const char* zeros = "00000000";
-    static constexpr double MAX = 99999999999.99999999;
+    static constexpr uint64_t scale = const_pow<10, nPlaces>();
+    static constexpr int digits = std::numeric_limits<uint64_t>::digits10;
+    static constexpr double MAX = static_cast<double>(const_pow<10, (digits - nPlaces)>() - 1) + (static_cast<double>(scale - 1) / static_cast<double>(scale));
 
+    static_assert(nPlaces < digits);
+    static_assert(nPlaces > 0);
+
+    static std::string zeros() { return {std::string(nPlaces, '0')}; }
     static std::runtime_error errTooLarge;
     static std::runtime_error errFormat;
 
@@ -206,7 +218,7 @@ class Decimal {
 
     [[nodiscard]] std::string toStr() const {
         if (fp == 0) {
-            return "0." + std::string(zeros);
+            return "0." + std::string(zeros());
         }
 
         std::array<char, 24> buf;
