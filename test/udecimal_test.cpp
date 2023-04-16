@@ -394,6 +394,32 @@ void testGeneralixedPlaces() {
     assert(f4.toString() == "999999999999999999.1");
 }
 
+template <int nPlaces>
+void testEncodeDecode() {
+    udecimal::Decimal<nPlaces> original(123.456789);
+    std::vector<uint8_t> binary_data = original.EncodeBinary();
+
+    udecimal::Decimal<nPlaces> result;
+    result.DecodeBinary(binary_data);
+
+    assert(original == result);
+}
+
+template <int nPlaces>
+void testDecodeBinaryData() {
+    udecimal::Decimal<nPlaces> original(987.654321);
+    std::vector<uint8_t> binary_data = original.EncodeBinary();
+    std::vector<uint8_t> extra_data = {42, 24, 0};
+
+    binary_data.insert(binary_data.end(), extra_data.begin(), extra_data.end());
+
+    udecimal::Decimal<nPlaces> result;
+    std::vector<uint8_t> remaining_data = result.DecodeBinaryData(binary_data);
+
+    assert(original == result);
+    assert(extra_data == remaining_data);
+}
+
 int main() {
     testBasic();
     testEqual();
@@ -412,6 +438,16 @@ int main() {
     testString();
     testRound();
     testGeneralixedPlaces();
+
+    testEncodeDecode<3>();
+    testEncodeDecode<6>();
+    testEncodeDecode<8>();
+    testEncodeDecode<11>();
+
+    testDecodeBinaryData<3>();
+    testDecodeBinaryData<6>();
+    testDecodeBinaryData<8>();
+    testDecodeBinaryData<11>();
 
     return 0;
 }
