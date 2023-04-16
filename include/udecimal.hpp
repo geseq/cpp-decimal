@@ -7,6 +7,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace udecimal {
 
@@ -181,6 +182,63 @@ class Decimal {
         f0 = double(int(f0)) / pow(10, n);
 
         return {double(toInt()) + f0};
+    }
+
+    // DecodeBinary reads from a byte vector and sets the Decimal value
+    void DecodeBinary(const std::vector<uint8_t>& data) {
+        uint64_t value = 0;
+        int shift = 0;
+        size_t index = 0;
+        for (; index < data.size() - 1; ++index) {
+            uint8_t byte = data[index];
+            value |= static_cast<uint64_t>(byte & 0x7F) << shift;
+            if ((byte & 0x80) == 0) {
+                break;
+            }
+            shift += 7;
+        }
+
+        int extracted_nPlaces = data[index + 1];
+        if (extracted_nPlaces != nPlaces) {
+            if (extracted_nPlaces > nPlaces) {
+                value /= pow(10, extracted_nPlaces - nPlaces);
+            } else {
+                value *= pow(10, nPlaces - extracted_nPlaces);
+            }
+        }
+
+        fp = value;
+    }
+
+    // DecodeBinaryData reads from a byte vector, sets the Decimal value, and returns the remaining data
+    std::vector<uint8_t> DecodeBinaryData(const std::vector<uint8_t>& data) {
+        DecodeBinary(data);
+        size_t index = 0;
+        for (; index < data.size() - 1; ++index) {
+            if ((data[index] & 0x80) == 0) {
+                break;
+            }
+        }
+        return {data.begin() + index + 2, data.end()};
+    }
+
+    // EncodeBinary serializes the Decimal value into a byte vector
+    [[nodiscard]] std::vector<uint8_t> EncodeBinary() const {
+        std::vector<uint8_t> data;
+        uint64_t value = fp;
+        do {
+            uint8_t byte = value & 0x7F;
+            value >>= 7;
+            if (value != 0) {
+                byte |= 0x80;
+            }
+            data.push_back(byte);
+        } while (value != 0);
+
+        // Add nPlaces as an additional byte at the end
+        data.push_back(static_cast<uint8_t>(nPlaces));
+
+        return data;
     }
 
    private:
