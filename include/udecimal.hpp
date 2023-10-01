@@ -67,7 +67,7 @@ class Decimal {
         }
 
         std::size_t period = s.find('.');
-        uint64_t i, f;
+        uint64_t i = 0, f = 0;
         if (period == std::string::npos) {
             i = std::stoull(s);
             if (i > MAX) {
