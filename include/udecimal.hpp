@@ -13,6 +13,14 @@
 
 namespace udecimal {
 
+template <typename T, typename = void>
+struct has_int128_impl : std::false_type {};
+
+template <typename T>
+struct has_int128_impl<T, decltype(sizeof(T(1) * T(1) == T(1)))> : std::true_type {};
+
+constexpr bool has_int128 = has_int128_impl<__int128>::value;
+
 template <int base, int exponent>
 constexpr uint64_t const_pow() {
     uint64_t result = 1;
@@ -125,9 +133,31 @@ class Decimal {
 
     Decimal operator*(const Decimal& f0) { return Decimal{mul(fp, f0.fp)}; }
 
-    Decimal operator/(const Decimal& f0) {
-        double quotient = Double() / f0.Double();
-        return {quotient};
+    Decimal operator/(const Decimal& f0) const {
+        if constexpr (has_int128) {
+            if (f0.fp == 0) {
+                throw std::runtime_error("Division by zero.");
+            }
+
+            __int128 temp = static_cast<__int128>(fp) * scale;
+            __int128 remainder = temp % f0.fp;
+            temp /= f0.fp;
+
+            if (temp > std::numeric_limits<uint64_t>::max()) {
+                throw std::overflow_error("Overflow after division.");
+            }
+
+            auto quotient = static_cast<uint64_t>(temp);
+
+            if (remainder * 2 >= f0.fp) {
+                quotient++;
+            }
+
+            return Decimal(quotient);
+        } else {
+            double quotient = Double() / f0.Double();
+            return Decimal(quotient);
+        }
     }
 
     bool operator==(const Decimal& rhs) const { return fp == rhs.fp; }
