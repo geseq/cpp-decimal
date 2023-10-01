@@ -154,6 +154,8 @@ void testDouble() {
     assert(f1.toString() == "0.0001");
 
     f1 = Decimal<>(".1");
+    assert(f1.toString() == "0.1");
+
     auto f2 = Decimal<>(Decimal(f1.Double()).toString());
     assert(f1 == f2);
 }
