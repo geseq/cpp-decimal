@@ -11,6 +11,14 @@
 #include <string>
 #include <vector>
 
+#if defined(__GNUC__) || defined(__clang__)
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+#else
+#define likely(x) (x)
+#define unlikely(x) (x)
+#endif
+
 namespace udecimal {
 
 template <typename T, typename = void>
@@ -54,10 +62,10 @@ class Decimal {
 
     // Creates a Decimal from a double, rounding at the 8th decimal place
     Decimal(double f) {
-        if (std::isnan(f)) {
+        if (unlikely(std::isnan(f))) {
             throw std::invalid_argument("invalid input");
         }
-        if (f >= MAX || f < 0) {
+        if (unlikely(f >= MAX || f < 0)) {
             throw std::invalid_argument("invalid input");
         }
         double round = 0.5;
@@ -82,14 +90,14 @@ class Decimal {
         uint64_t i = 0, f = 0;
         if (period == std::string::npos) {
             i = std::stoull(s);
-            if (i > MAX) {
+            if (unlikely(i > MAX)) {
                 throw std::overflow_error("number too large");
             }
             fp = i * scale;
         } else {
             if (period > 0) {
                 i = std::stoull(s.substr(0, period));
-                if (i > MAX) {
+                if (unlikely(i > MAX)) {
                     throw std::overflow_error("number too large");
                 }
             }
@@ -117,7 +125,7 @@ class Decimal {
 
     // Add adds f0 to f producing a Decimal.
     Decimal operator+(const Decimal& f0) const {
-        if (f0.fp > UINT64_MAX - fp) {
+        if (unlikely(f0.fp > UINT64_MAX - fp)) {
             throw std::overflow_error("decimal overflow");
         }
         return Decimal{fp + f0.fp};
@@ -125,7 +133,7 @@ class Decimal {
 
     // Sub subtracts f0 from f producing a Decimal.
     Decimal operator-(const Decimal& f0) const {
-        if (fp < f0.fp) {
+        if (unlikely(fp < f0.fp)) {
             throw std::overflow_error("decimal overflow");
         }
         return Decimal{fp - f0.fp};
@@ -231,7 +239,7 @@ class Decimal {
             return Decimal<toPlaces>(fp / factor);
         } else {
             static constexpr uint64_t factor = const_pow<10, toPlaces>() / scale;
-            if (fp > std::numeric_limits<uint64_t>::max() / factor) {
+            if (unlikely(fp > std::numeric_limits<uint64_t>::max() / factor)) {
                 throw std::overflow_error("conversion overflow.");
             }
             return Decimal<toPlaces>(fp * factor);
@@ -307,7 +315,7 @@ class Decimal {
 
         if (fp0_a != 0) {
             result = fp_a * fp0_a;
-            if (static_cast<double>(result) > MAX) {
+            if (unlikely(static_cast<double>(result) > MAX)) {
                 throw std::overflow_error("decimal overflow");
             }
             result = (result * scale) + (fp_b * fp0_a);
