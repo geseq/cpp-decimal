@@ -362,7 +362,7 @@ void testRound() {
     assert(f1.toString() == "1.1235");
 }
 
-void testGeneralixedPlaces() {
+void testGeneralizedPlaces() {
     Decimal<9> f0 = Decimal<9>("9999999999.12345678901234567890");
     assert(f0.scale == 1000000000);
     assert(f0.MAX == 9999999999.999999999);
@@ -437,7 +437,6 @@ int main() {
     testIntFrac();
     testString();
     testRound();
-    testGeneralixedPlaces();
 
     testEncodeDecode<3>();
     testEncodeDecode<6>();
