@@ -396,6 +396,76 @@ void testGeneralizedPlaces() {
     assert(f4.toString() == "999999999999999999.1");
 }
 
+void testConvertPrecision() {
+    Decimal<> f0("1.12345678");
+    Decimal<2> f1 = f0.convert<2>();
+    assert(f1.toString() == "1.12");
+
+    Decimal<> f2("100");
+    Decimal<2> f3 = f2.convert<2>();
+    assert(f3.toString() == "100");
+
+    Decimal<2> f4("1.12");
+    Decimal<> f5 = f4.convert<8>();
+    assert(f5.toString() == "1.12");
+
+    Decimal<> f6("1.12345678");
+    Decimal<> f7 = f6.convert<8>();
+    assert(f7.toString() == "1.12345678");
+
+    Decimal<> f8("1e8");
+    Decimal<2> f9 = f8.convert<2>();
+    assert(f9.toString() == "100000000");
+
+    Decimal<> f10("0.000000012345678");
+    Decimal<4> f11 = f10.convert<4>();
+    assert(f11.toString() == "0");
+
+    Decimal<> f12("1.126");
+    Decimal<2> f13 = f12.convert<2>();
+    assert(f13.toString() == "1.12");
+
+    Decimal<> f14("1.124");
+    Decimal<2> f15 = f14.convert<2>();
+    assert(f15.toString() == "1.12");
+
+    Decimal<1> f16("12345678901234567");
+    Decimal<2> f17 = f16.convert<2>();
+    assert(f16.toString() == f17.toString());
+
+    Decimal<18> f18("0.0000000000000000001");
+    Decimal<1> f19 = f18.convert<1>();
+    assert(f19.toString() == "0");
+
+    Decimal<1> f20("123456789012345678");
+    try {
+        Decimal<18> f21 = f20.convert<18>();
+        assert(false);
+    } catch (const std::overflow_error& e) {
+        std::cout << "Caught expected overflow error" << std::endl;
+    }
+
+    Decimal<1> f22("123456789012345678");
+    try {
+        Decimal<3> f23 = f22.convert<3>();
+        assert(false);
+    } catch (const std::overflow_error& e) {
+        std::cout << "Caught expected overflow error" << std::endl;
+    }
+
+    Decimal<6> f24("12345.6789");
+    Decimal<13> f25 = f24.convert<13>();
+    assert(f25.toString() == "12345.6789");
+
+    Decimal<6> f26("12345.6789");
+    try {
+        Decimal<16> f27 = f26.convert<16>();
+        assert(false);
+    } catch (const std::overflow_error& e) {
+        std::cout << "Caught expected overflow error" << std::endl;
+    }
+}
+
 template <int nPlaces>
 void testEncodeDecode() {
     udecimal::Decimal<nPlaces> original(123.456789);
@@ -439,6 +509,8 @@ int main() {
     testIntFrac();
     testString();
     testRound();
+    testGeneralizedPlaces();
+    testConvertPrecision();
 
     testEncodeDecode<3>();
     testEncodeDecode<6>();

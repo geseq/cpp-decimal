@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cwchar>
+#include <iostream>
 #include <iterator>
 #include <stdexcept>
 #include <string>
@@ -39,6 +41,8 @@ class Decimal {
     static std::string zeros() { return {std::string(nPlaces, '0')}; }
     static std::runtime_error errTooLarge;
     static std::runtime_error errFormat;
+
+    Decimal(const Decimal<nPlaces>& other) : fp(other.fp) {}
 
     // Creates a Decimal from a double, rounding at the 8th decimal place
     Decimal(double f) {
@@ -182,6 +186,26 @@ class Decimal {
         f0 = double(int(f0)) / pow(10, n);
 
         return {double(toInt()) + f0};
+    }
+
+    // convert allows converting a Decimal from one precision to another.
+    // A conversion  moving the number of places right, will just be a lossy conversion
+    // A conversion moving the number of places left will throw an overflow error
+    // if it is not possible
+    template <int toPlaces>
+    Decimal<toPlaces> convert() const {
+        if constexpr (toPlaces == nPlaces) {
+            return Decimal<toPlaces>(*this);
+        } else if constexpr (toPlaces < nPlaces) {
+            static constexpr uint64_t factor = scale / const_pow<10, toPlaces>();
+            return Decimal<toPlaces>(fp / factor);
+        } else {
+            static constexpr uint64_t factor = const_pow<10, toPlaces>() / scale;
+            if (fp > std::numeric_limits<uint64_t>::max() / factor) {
+                throw std::overflow_error("conversion overflow.");
+            }
+            return Decimal<toPlaces>(fp * factor);
+        }
     }
 
     // DecodeBinary reads from a byte vector and sets the Decimal value
