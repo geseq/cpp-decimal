@@ -252,8 +252,8 @@ class Decimal {
         }
 
         double f0 = to_frac();
-        f0 = f0 * pow(10, n) + round;
-        f0 = double(int(f0)) / pow(10, n);
+        f0 = f0 * precomputed_pow_10(n) + round;
+        f0 = double(int(f0)) / precomputed_pow_10(n);
 
         return {double(to_int()) + f0};
     }
