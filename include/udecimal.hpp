@@ -150,10 +150,10 @@ class Decimal {
         return {newI(value, static_cast<unsigned int>(-exp))};
     }
 
-    [[nodiscard]] bool IsZero() const { return fp == 0; }
+    [[nodiscard]] bool is_zero() const { return fp == 0; }
 
     // Float converts the Decimal to a float64
-    [[nodiscard]] double Double() const { return static_cast<double>(fp) / scale; }
+    [[nodiscard]] double to_double() const { return static_cast<double>(fp) / scale; }
 
     // Add adds f0 to f producing a Decimal.
     Decimal operator+(const Decimal& f0) const {
@@ -195,7 +195,7 @@ class Decimal {
 
             return Decimal(quotient);
         } else {
-            double quotient = Double() / f0.Double();
+            double quotient = to_double() / f0.to_double();
             return Decimal(quotient);
         }
     }
@@ -207,7 +207,7 @@ class Decimal {
     bool operator>(const Decimal& rhs) const { return fp > rhs.fp; }
     bool operator>=(const Decimal& rhs) const { return fp >= rhs.fp; }
 
-    [[nodiscard]] std::string toString() const {
+    [[nodiscard]] std::string to_string() const {
         std::string s = toStr();
 
         int point = s.find('.');
@@ -226,7 +226,7 @@ class Decimal {
         return s.substr(0, point);
     }
 
-    [[nodiscard]] std::string toString(int decimals) const {
+    [[nodiscard]] std::string to_string(int decimals) const {
         std::string s = toStr();
 
         int point = s.find('.');
@@ -241,9 +241,9 @@ class Decimal {
         }
     }
 
-    [[nodiscard]] uint64_t toInt() const { return fp / scale; }
+    [[nodiscard]] uint64_t to_int() const { return fp / scale; }
 
-    [[nodiscard]] double toFrac() const { return static_cast<double>(fp % scale) / scale; }
+    [[nodiscard]] double to_frac() const { return static_cast<double>(fp % scale) / scale; }
 
     [[nodiscard]] Decimal round(int n) const {
         double round = 0.5;
@@ -251,19 +251,19 @@ class Decimal {
             round = -0.5;
         }
 
-        double f0 = toFrac();
+        double f0 = to_frac();
         f0 = f0 * pow(10, n) + round;
         f0 = double(int(f0)) / pow(10, n);
 
-        return {double(toInt()) + f0};
+        return {double(to_int()) + f0};
     }
 
-    // convert allows converting a Decimal from one precision to another.
+    // convert_precision allows converting a Decimal from one precision to another.
     // A conversion  moving the number of places right, will just be a lossy conversion
     // A conversion moving the number of places left will throw an overflow error
     // if it is not possible
     template <int toPlaces>
-    Decimal<toPlaces> convert() const {
+    Decimal<toPlaces> convert_precision() const {
         if constexpr (toPlaces == nPlaces) {
             return Decimal<toPlaces>(*this);
         } else if constexpr (toPlaces < nPlaces) {
@@ -278,8 +278,8 @@ class Decimal {
         }
     }
 
-    // DecodeBinary reads from a byte vector and sets the Decimal value
-    void DecodeBinary(const std::vector<uint8_t>& data) {
+    // decode_binary reads from a byte vector and sets the Decimal value
+    void decode_binary(const std::vector<uint8_t>& data) {
         uint64_t value = 0;
         int shift = 0;
         size_t index = 0;
@@ -304,9 +304,9 @@ class Decimal {
         fp = value;
     }
 
-    // DecodeBinaryData reads from a byte vector, sets the Decimal value, and returns the remaining data
-    std::vector<uint8_t> DecodeBinaryData(const std::vector<uint8_t>& data) {
-        DecodeBinary(data);
+    // decode_binary_data reads from a byte vector, sets the Decimal value, and returns the remaining data
+    std::vector<uint8_t> decode_binary_data(const std::vector<uint8_t>& data) {
+        decode_binary(data);
         size_t index = 0;
         for (; index < data.size() - 1; ++index) {
             if ((data[index] & 0x80) == 0) {
@@ -316,8 +316,8 @@ class Decimal {
         return {data.begin() + index + 2, data.end()};
     }
 
-    // EncodeBinary serializes the Decimal value into a byte vector
-    [[nodiscard]] std::vector<uint8_t> EncodeBinary() const {
+    // encode_binary serializes the Decimal value into a byte vector
+    [[nodiscard]] std::vector<uint8_t> encode_binary() const {
         std::vector<uint8_t> data;
         uint64_t value = fp;
         do {
