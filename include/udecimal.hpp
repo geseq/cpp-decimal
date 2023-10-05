@@ -160,7 +160,7 @@ class Decimal {
         if (unlikely(f0.fp > UINT64_MAX - fp)) {
             throw errOverflow;
         }
-        return Decimal{fp + f0.fp};
+        return {fp + f0.fp};
     }
 
     // Sub subtracts f0 from f producing a Decimal.
@@ -168,12 +168,12 @@ class Decimal {
         if (unlikely(fp < f0.fp)) {
             throw errOverflow;
         }
-        return Decimal{fp - f0.fp};
+        return {fp - f0.fp};
     }
 
-    Decimal operator*(const Decimal& f0) { return Decimal{mul(fp, f0.fp)}; }
+    Decimal operator*(const Decimal& f0) { return {mul(fp, f0.fp)}; }
 
-    Decimal operator/(const Decimal& f0) const { return Decimal(div(fp, f0.fp)); }
+    Decimal operator/(const Decimal& f0) const { return {div(fp, f0.fp)}; }
 
     bool operator==(const Decimal& rhs) const { return fp == rhs.fp; }
     bool operator!=(const Decimal& rhs) const { return fp != rhs.fp; }
@@ -267,12 +267,12 @@ class Decimal {
     }
 
     // decode_binary reads from a byte vector and sets the Decimal value
-    void decode_binary(const std::vector<uint8_t>& data) {
+    // It also updates the offset.
+    void decode_binary(const std::vector<uint8_t>& data, size_t& offset) {
         uint64_t value = 0;
         int shift = 0;
-        size_t index = 0;
-        for (; index < data.size() - 1; ++index) {
-            uint8_t byte = data[index];
+        for (; offset < data.size() - 1; ++offset) {
+            uint8_t byte = data[offset];
             value |= static_cast<uint64_t>(byte & 0x7F) << shift;
             if ((byte & 0x80) == 0) {
                 break;
@@ -280,33 +280,27 @@ class Decimal {
             shift += 7;
         }
 
-        int extracted_nPlaces = data[index + 1];
+        int extracted_nPlaces = data[offset + 1];
         if (extracted_nPlaces != nPlaces) {
             if (extracted_nPlaces > nPlaces) {
-                value /= pow(10, extracted_nPlaces - nPlaces);
+                value /= precomputed_pow_10(extracted_nPlaces - nPlaces);
             } else {
-                value *= pow(10, nPlaces - extracted_nPlaces);
+                value *= precomputed_pow_10(nPlaces - extracted_nPlaces);
             }
         }
 
         fp = value;
+        offset += 2;  // We also read one extra byte for the 'nPlaces' information
     }
 
-    // decode_binary_data reads from a byte vector, sets the Decimal value, and returns the remaining data
-    std::vector<uint8_t> decode_binary_data(const std::vector<uint8_t>& data) {
-        decode_binary(data);
-        size_t index = 0;
-        for (; index < data.size() - 1; ++index) {
-            if ((data[index] & 0x80) == 0) {
-                break;
-            }
-        }
-        return {data.begin() + index + 2, data.end()};
+    // decode_binary_data reads from a byte vector, sets the Decimal value, and returns the new offset
+    size_t decode_binary_data(const std::vector<uint8_t>& data, size_t offset = 0) {
+        decode_binary(data, offset);
+        return offset;  // offset has been updated in decode_binary
     }
 
-    // encode_binary serializes the Decimal value into a byte vector
-    [[nodiscard]] std::vector<uint8_t> encode_binary() const {
-        std::vector<uint8_t> data;
+    // encode_binary serializes the Decimal value into a byte vector and updates the offset.
+    void encode_binary(std::vector<uint8_t>& data, size_t& offset) const {
         uint64_t value = fp;
         do {
             uint8_t byte = value & 0x7F;
@@ -314,12 +308,28 @@ class Decimal {
             if (value != 0) {
                 byte |= 0x80;
             }
-            data.push_back(byte);
+
+            // Ensure that the vector can accommodate the new byte
+            if (offset >= data.size()) {
+                data.resize(offset + 1);
+            }
+            data[offset] = byte;
+            ++offset;
         } while (value != 0);
 
         // Add nPlaces as an additional byte at the end
-        data.push_back(static_cast<uint8_t>(nPlaces));
+        if (offset >= data.size()) {
+            data.resize(offset + 1);
+        }
+        data[offset] = static_cast<uint8_t>(nPlaces);
+        ++offset;
+    }
 
+    // Overloaded version of encode_binary that creates a new vector
+    [[nodiscard]] std::vector<uint8_t> encode_binary() const {
+        std::vector<uint8_t> data;
+        size_t offset = 0;
+        encode_binary(data, offset);
         return data;
     }
 
