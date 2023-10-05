@@ -508,9 +508,24 @@ void testEncodeDecode() {
     std::vector<uint8_t> binary_data = original.encode_binary();
 
     udecimal::Decimal<nPlaces> result;
-    result.decode_binary(binary_data);
+    size_t offset = 0;
+    result.decode_binary(binary_data, offset);
 
     assert(original == result);
+    assert(offset > 0);
+
+    std::vector<uint8_t> binary_vec{33};
+    size_t vec_offset = 1;
+    original.encode_binary(binary_vec, vec_offset);
+
+    std::vector<uint8_t> extra_data = {42, 24, 0};
+    binary_vec.insert(binary_vec.end(), extra_data.begin(), extra_data.end());
+
+    std::vector<uint8_t> expected{33};
+    expected.insert(expected.end(), binary_data.begin(), binary_data.end());
+    expected.insert(expected.end(), extra_data.begin(), extra_data.end());
+
+    assert(binary_vec == expected);
 }
 
 template <int nPlaces>
@@ -522,7 +537,9 @@ void testDecodeBinaryData() {
     binary_data.insert(binary_data.end(), extra_data.begin(), extra_data.end());
 
     udecimal::Decimal<nPlaces> result;
-    std::vector<uint8_t> remaining_data = result.decode_binary_data(binary_data);
+    size_t offset = result.decode_binary_data(binary_data);
+
+    std::vector<uint8_t> remaining_data{binary_data.begin() + offset, binary_data.end()};
 
     assert(original == result);
     assert(extra_data == remaining_data);
