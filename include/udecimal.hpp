@@ -83,7 +83,7 @@ class Decimal {
     static_assert(nPlaces < digits);
     static_assert(nPlaces > 0);
 
-    static std::string zeros() { return {std::string(nPlaces, '0')}; }
+    inline static std::string zeros() { return {std::string(nPlaces, '0')}; }
 
     static const std::runtime_error errDivByZero;
     static const std::overflow_error errTooLarge;
@@ -208,14 +208,14 @@ class Decimal {
     bool operator>=(const Decimal& rhs) const { return fp >= rhs.fp; }
 
     [[nodiscard]] std::string to_string() const {
-        std::string s = toStr();
+        std::string s = to_str();
 
-        int point = s.find('.');
+        std::size_t point = s.find('.');
         if (point == std::string::npos) {
             return s;
         }
 
-        int index = s.length() - 1;
+        std::size_t index = s.length() - 1;
         while (index != point) {
             if (s[index] != '0') {
                 return s.substr(0, index + 1);
@@ -227,9 +227,9 @@ class Decimal {
     }
 
     [[nodiscard]] std::string to_string(int decimals) const {
-        std::string s = toStr();
+        std::string s = to_str();
 
-        int point = s.find('.');
+        std::size_t point = s.find('.');
         if (point == std::string::npos) {
             return s;
         }
@@ -369,9 +369,10 @@ class Decimal {
         return i;
     }
 
-    [[nodiscard]] std::string toStr() const {
+    [[nodiscard]] std::string to_str() const {
         if (fp == 0) {
-            return "0." + std::string(zeros());
+            static const std::string zero_str = "0." + zeros();
+            return zero_str;
         }
 
         std::array<char, 24> buf;
