@@ -25,7 +25,7 @@ template <typename T, typename = void>
 struct has_int128_impl : std::false_type {};
 
 template <typename T>
-struct has_int128_impl<T, decltype(sizeof(T(1) * T(1) == T(1)))> : std::true_type {};
+struct has_int128_impl<T, std::void_t<decltype(T(1) * T(1))>> : std::true_type {};
 
 constexpr bool has_int128 = has_int128_impl<__int128>::value;
 
@@ -92,7 +92,7 @@ class Decimal {
 
     Decimal(const Decimal<nPlaces>& other) : fp(other.fp) {}
 
-    // Creates a Decimal from a double, rounding at the 8th decimal place
+    // Creates a Decimal from a double, rounding at the nth place
     Decimal(double f) {
         if (unlikely(std::isnan(f))) {
             throw errInvalidInput;
@@ -108,7 +108,7 @@ class Decimal {
     }
 
     // Creates a Decimal for an integer, moving the decimal point n places to the left
-    // For example, NewI(123,1) becomes 12.3. If n > 7, the value is truncated
+    // For example, Decimal(123,1) becomes 12.3. If n > 7, the value is truncated
     Decimal(uint64_t i, uint32_t n) { fp = newI(i, n); }
 
     Decimal(const std::string& s) {
@@ -173,32 +173,7 @@ class Decimal {
 
     Decimal operator*(const Decimal& f0) { return Decimal{mul(fp, f0.fp)}; }
 
-    Decimal operator/(const Decimal& f0) const {
-        if constexpr (has_int128) {
-            if (f0.fp == 0) {
-                throw errDivByZero;
-            }
-
-            __int128 temp = static_cast<__int128>(fp) * scale;
-            __int128 remainder = temp % f0.fp;
-            temp /= f0.fp;
-
-            if (temp > std::numeric_limits<uint64_t>::max()) {
-                throw errOverflow;
-            }
-
-            auto quotient = static_cast<uint64_t>(temp);
-
-            if (remainder * 2 >= f0.fp) {
-                quotient++;
-            }
-
-            return Decimal(quotient);
-        } else {
-            double quotient = to_double() / f0.to_double();
-            return Decimal(quotient);
-        }
-    }
+    Decimal operator/(const Decimal& f0) const { return Decimal(div(fp, f0.fp)); }
 
     bool operator==(const Decimal& rhs) const { return fp == rhs.fp; }
     bool operator!=(const Decimal& rhs) const { return fp != rhs.fp; }
@@ -246,16 +221,25 @@ class Decimal {
     [[nodiscard]] double to_frac() const { return static_cast<double>(fp % scale) / scale; }
 
     [[nodiscard]] Decimal round(int n) const {
-        double round = 0.5;
-        if (fp < 0) {
-            round = -0.5;
+        if (n >= nPlaces) {
+            return *this;
         }
 
-        double f0 = to_frac();
-        f0 = f0 * precomputed_pow_10(n) + round;
-        f0 = double(int(f0)) / precomputed_pow_10(n);
+        if (n == 0) {
+            return fp - (fp % scale);
+        }
 
-        return {double(to_int()) + f0};
+        uint64_t frac = fp % scale;
+        uint64_t f0 = fp - frac;
+
+        auto pow = precomputed_pow_10(nPlaces - n);
+        frac += pow / 2;  // rounding factor
+        frac /= pow;
+        frac *= pow;
+
+        uint64_t new_fp = f0 + frac;
+
+        return {new_fp};
     }
 
     // convert_precision allows converting a Decimal from one precision to another.
@@ -267,8 +251,12 @@ class Decimal {
         if constexpr (toPlaces == nPlaces) {
             return Decimal<toPlaces>(*this);
         } else if constexpr (toPlaces < nPlaces) {
-            static constexpr uint64_t factor = scale / const_pow<10, toPlaces>();
-            return Decimal<toPlaces>(fp / factor);
+            if constexpr (has_int128) {
+                return Decimal<toPlaces>(div(fp, scale), nPlaces);
+            } else {
+                static constexpr uint64_t factor = scale / const_pow<10, toPlaces>();
+                return Decimal<toPlaces>(fp / factor);
+            }
         } else {
             static constexpr uint64_t factor = const_pow<10, toPlaces>() / scale;
             if (unlikely(fp > std::numeric_limits<uint64_t>::max() / factor)) {
@@ -360,9 +348,39 @@ class Decimal {
         return result;
     }
 
+    using DivT = typename std::conditional<has_int128, uint64_t, double>::type;
+
+    static DivT div(uint64_t fp, uint64_t f0) {
+        if (unlikely(f0 == 0)) {
+            throw errDivByZero;
+        }
+
+        if constexpr (has_int128) {
+            __int128 temp = static_cast<__int128>(fp) * scale;
+            __int128 remainder = temp % f0;
+            temp /= f0;
+
+            if (unlikely(temp > std::numeric_limits<uint64_t>::max())) {
+                throw errOverflow;
+            }
+
+            auto quotient = static_cast<uint64_t>(temp);
+
+            if (remainder * 2 >= f0) {
+                ++quotient;  // rounding factor
+            }
+
+            return quotient;
+        } else {
+            return double(fp) / double(f0);
+        }
+    }
+
     static uint64_t newI(uint64_t i, uint32_t n) {
         if (n > nPlaces) {
-            i /= precomputed_pow_10(n - nPlaces);
+            auto pow = precomputed_pow_10(n - nPlaces);
+            i += pow / 2;  // rounding factor
+            i /= pow;
             n = nPlaces;
         }
         i *= precomputed_pow_10(nPlaces - n);

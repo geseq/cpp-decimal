@@ -90,6 +90,9 @@ void testNewI() {
     f = Decimal<>(123, 0);
     assert(f.to_string() == "123");
 
+    f = Decimal<>(123, 5);
+    assert(f.to_string() == "0.00123");
+
     f = Decimal<>(123456789001, 9);
     assert(f.to_string() == "123.456789");
 
@@ -99,6 +102,9 @@ void testNewI() {
 
     f = Decimal<>(123456789012, 9);
     assert(f.to_string(8) == "123.45678901");
+
+    auto g = Decimal<3>(123, 5);
+    assert(g.to_string() == "0.001");
 }
 
 void testMaxValue() {
@@ -353,12 +359,45 @@ void testRound() {
     assert(f1.to_string() == "1.12");
 
     f1 = f0.round(5);
-
     assert(f1.to_string() == "1.12345");
 
     f1 = f0.round(4);
-
     assert(f1.to_string() == "1.1235");
+
+    f1 = f0.round(0);
+    assert(f1.to_string() == "1");
+
+    f0 = Decimal("1.12345");
+    f1 = f0.round(7);
+    assert(f1.to_string() == "1.12345");
+
+    f0 = Decimal("0");
+    f1 = f0.round(4);
+    assert(f1.to_string() == "0");
+
+    f0 = Decimal("0.0001234");
+    f1 = f0.round(2);
+    assert(f1.to_string() == "0");
+
+    f0 = Decimal("0.6789");
+    f1 = f0.round(2);
+    assert(f1.to_string() == "0.68");
+
+    f0 = Decimal("0.0000");
+    f1 = f0.round(2);
+    assert(f1.to_string() == "0");
+
+    f0 = Decimal("123456789.987654321");
+    f1 = f0.round(3);
+    assert(f1.to_string() == "123456789.988");
+
+    f0 = Decimal("123456789.987654321");
+    f1 = f0.round(0);
+    assert(f1.to_string() == "123456789");
+
+    Decimal<18> f2 = Decimal<18>("0.0000000123456789");
+    Decimal<18> f3 = f2.round(10);
+    assert(f3.to_string() == "0.0000000123");
 }
 
 void testGeneralizedPlaces() {
@@ -420,7 +459,7 @@ void testConvertPrecision() {
 
     Decimal<> f12("1.126");
     Decimal<2> f13 = f12.convert_precision<2>();
-    assert(f13.to_string() == "1.12");
+    assert(f13.to_string() == "1.13");
 
     Decimal<> f14("1.124");
     Decimal<2> f15 = f14.convert_precision<2>();
