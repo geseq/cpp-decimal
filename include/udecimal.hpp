@@ -84,18 +84,21 @@ class Decimal {
     static_assert(nPlaces > 0);
 
     static std::string zeros() { return {std::string(nPlaces, '0')}; }
-    static std::runtime_error errTooLarge;
-    static std::runtime_error errFormat;
+
+    static const std::runtime_error errDivByZero;
+    static const std::overflow_error errTooLarge;
+    static const std::overflow_error errOverflow;
+    static const std::invalid_argument errInvalidInput;
 
     Decimal(const Decimal<nPlaces>& other) : fp(other.fp) {}
 
     // Creates a Decimal from a double, rounding at the 8th decimal place
     Decimal(double f) {
         if (unlikely(std::isnan(f))) {
-            throw std::invalid_argument("invalid input");
+            throw errInvalidInput;
         }
         if (unlikely(f >= MAX || f < 0)) {
-            throw std::invalid_argument("invalid input");
+            throw errInvalidInput;
         }
         double round = 0.5;
         if (f < 0) {
@@ -120,14 +123,14 @@ class Decimal {
         if (period == std::string::npos) {
             i = std::stoull(s);
             if (unlikely(i > MAX)) {
-                throw std::overflow_error("number too large");
+                throw errTooLarge;
             }
             fp = i * scale;
         } else {
             if (period > 0) {
                 i = std::stoull(s.substr(0, period));
                 if (unlikely(i > MAX)) {
-                    throw std::overflow_error("number too large");
+                    throw errTooLarge;
                 }
             }
             std::string fs = s.substr(period + 1);
@@ -155,7 +158,7 @@ class Decimal {
     // Add adds f0 to f producing a Decimal.
     Decimal operator+(const Decimal& f0) const {
         if (unlikely(f0.fp > UINT64_MAX - fp)) {
-            throw std::overflow_error("decimal overflow");
+            throw errOverflow;
         }
         return Decimal{fp + f0.fp};
     }
@@ -163,7 +166,7 @@ class Decimal {
     // Sub subtracts f0 from f producing a Decimal.
     Decimal operator-(const Decimal& f0) const {
         if (unlikely(fp < f0.fp)) {
-            throw std::overflow_error("decimal overflow");
+            throw errOverflow;
         }
         return Decimal{fp - f0.fp};
     }
@@ -173,7 +176,7 @@ class Decimal {
     Decimal operator/(const Decimal& f0) const {
         if constexpr (has_int128) {
             if (f0.fp == 0) {
-                throw std::runtime_error("Division by zero.");
+                throw errDivByZero;
             }
 
             __int128 temp = static_cast<__int128>(fp) * scale;
@@ -181,7 +184,7 @@ class Decimal {
             temp /= f0.fp;
 
             if (temp > std::numeric_limits<uint64_t>::max()) {
-                throw std::overflow_error("Overflow after division.");
+                throw errOverflow;
             }
 
             auto quotient = static_cast<uint64_t>(temp);
@@ -269,7 +272,7 @@ class Decimal {
         } else {
             static constexpr uint64_t factor = const_pow<10, toPlaces>() / scale;
             if (unlikely(fp > std::numeric_limits<uint64_t>::max() / factor)) {
-                throw std::overflow_error("conversion overflow.");
+                throw errOverflow;
             }
             return Decimal<toPlaces>(fp * factor);
         }
@@ -345,7 +348,7 @@ class Decimal {
         if (fp0_a != 0) {
             result = fp_a * fp0_a;
             if (unlikely(static_cast<double>(result) > MAX)) {
-                throw std::overflow_error("decimal overflow");
+                throw errOverflow;
             }
             result = (result * scale) + (fp_b * fp0_a);
         }
@@ -393,6 +396,13 @@ class Decimal {
     static int max(int a, int b) { return (a > b) ? a : b; }
 };
 
-static Decimal Zero = Decimal(uint64_t(0));
+template <int nPlaces>
+const std::runtime_error Decimal<nPlaces>::errDivByZero("division by zero");
+template <int nPlaces>
+const std::overflow_error Decimal<nPlaces>::errTooLarge("number is too large");
+template <int nPlaces>
+const std::overflow_error Decimal<nPlaces>::errOverflow("decimal overflow");
+template <int nPlaces>
+const std::invalid_argument Decimal<nPlaces>::errInvalidInput("invalid input");
 
 }  // namespace udecimal

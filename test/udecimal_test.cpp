@@ -29,17 +29,14 @@ void testBasic() {
 }
 
 void testEqual() {
-    Decimal<> f0 = udecimal::Zero;
+    Decimal<> f0 = udecimal::Decimal();
     Decimal<> f1 = Decimal("123.456");
 
     assert(f0 != f1);
     assert(f0 != f1);
     assert(f1 != f0);
 
-    f1 = udecimal::Zero;
-    assert(f0 == f1);
-
-    f0 = udecimal::Zero;
+    f1 = udecimal::Decimal(0, 0);
     assert(f0 == f1);
     assert(f0.toInt() == 0);
 }
