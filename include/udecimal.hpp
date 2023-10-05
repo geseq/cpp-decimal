@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+namespace udecimal {
+
 #if defined(__GNUC__) || defined(__clang__)
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
@@ -18,8 +20,6 @@
 #define likely(x) (x)
 #define unlikely(x) (x)
 #endif
-
-namespace udecimal {
 
 template <typename T, typename = void>
 struct has_int128_impl : std::false_type {};
@@ -36,6 +36,35 @@ constexpr uint64_t const_pow() {
         result *= base;
     }
     return result;
+}
+
+uint64_t precomputed_pow_10(unsigned int exponent) {
+    constexpr std::array<uint64_t, 20> powers_of_10 = {1,
+                                                       10,
+                                                       100,
+                                                       1000,
+                                                       10000,
+                                                       100000,
+                                                       1000000,
+                                                       10000000,
+                                                       100000000,
+                                                       1000000000,
+                                                       10000000000,
+                                                       100000000000,
+                                                       1000000000000,
+                                                       10000000000000,
+                                                       100000000000000,
+                                                       1000000000000000,
+                                                       10000000000000000,
+                                                       100000000000000000,
+                                                       1000000000000000000,
+                                                       10000000000000000000UL};
+
+    if (unlikely(exponent >= powers_of_10.size())) {
+        throw std::invalid_argument("invalid exponent");
+    }
+
+    return powers_of_10[exponent];
 }
 
 // Decimal is a decimal precision unsigned number (defaults to 11.8 digits).
@@ -109,13 +138,13 @@ class Decimal {
     }
 
     // New returns a new fixed-point decimal, value * 10 ^ exp.
-    static Decimal FromExp(uint64_t value, int32_t exp) {
+    static Decimal FromExp(uint64_t value, int exp) {
         if (exp >= 0) {
-            uint64_t exp_mul = std::pow(10, exp);
+            uint64_t exp_mul = precomputed_pow_10(exp);
             return {mul(newI(value, 0), newI(exp_mul, 0))};
         }
 
-        return {newI(value, static_cast<uint32_t>(-exp))};
+        return {newI(value, static_cast<unsigned int>(-exp))};
     }
 
     [[nodiscard]] bool IsZero() const { return fp == 0; }
@@ -330,10 +359,10 @@ class Decimal {
 
     static uint64_t newI(uint64_t i, uint32_t n) {
         if (n > nPlaces) {
-            i /= std::pow(10, n - nPlaces);
+            i /= precomputed_pow_10(n - nPlaces);
             n = nPlaces;
         }
-        i *= std::pow(10, nPlaces - n);
+        i *= precomputed_pow_10(nPlaces - n);
         return i;
     }
 
