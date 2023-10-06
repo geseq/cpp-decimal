@@ -9,7 +9,7 @@ add_library(udecimal INTERFACE)
 target_sources(udecimal INTERFACE include/udecimal.hpp)
 target_include_directories(udecimal INTERFACE include/)
 
-option(ENABLE_TESTING "Enable test target generation" ON)
+option(ENABLE_TESTING "Enable test target generation" OFF)
 option(BENCHMARK_ENABLE_TESTING "run benchmarks" OFF)
 
 if (ENABLE_TESTING)
