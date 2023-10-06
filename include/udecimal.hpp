@@ -471,8 +471,12 @@ class Decimal {
             return zero_str;
         }
 
-        bool is_negative = (fp < 0);
-        IntType val = is_negative ? -fp : fp;
+        IntType val = fp;
+        if constexpr (Signed) {
+            if (fp < 0) {
+                val = -fp;
+            }
+        }
 
         std::array<char, 25> buf;
         int i = sizeof(buf) - 1;
@@ -490,9 +494,11 @@ class Decimal {
 
         buf[i] = static_cast<char>(val + '0');
 
-        if (is_negative) {
-            i--;
-            buf[i] = '-';
+        if constexpr (Signed) {
+            if (fp < 0) {
+                i--;
+                buf[i] = '-';
+            }
         }
 
         return {std::next(buf.begin(), i), buf.end()};
