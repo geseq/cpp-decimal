@@ -6,9 +6,9 @@
 
 using udecimal::Decimal;
 
-void testBasic() {
-    Decimal<> f0 = Decimal("123.456");
-    Decimal<> f1 = Decimal("123.456");
+void testBasicU8() {
+    udecimal::U8 f0 = udecimal::U8("123.456");
+    udecimal::U8 f1 = udecimal::U8("123.456");
 
     assert(f0 == f1);
     assert(f1 == f0);
@@ -17,14 +17,56 @@ void testBasic() {
     assert(f0.to_string() == "123.456");
     assert(f1.to_string() == "123.456");
 
-    f0 = Decimal<>(1, 0);
-    f1 = Decimal<>(.5) + (Decimal(.5));
-    Decimal<> f2 = Decimal(.3) + Decimal(.3) + Decimal(.4);
+    f0 = udecimal::U8(1, 0);
+    f1 = udecimal::U8(.5) + (udecimal::U8(.5));
+    udecimal::U8 f2 = udecimal::U8(.3) + udecimal::U8(.3) + udecimal::U8(.4);
 
     assert(f0 == f1);
     assert(f0 == f2);
 
-    f0 = Decimal<>(.999);
+    f0 = udecimal::U8(.999);
+    assert(f0.to_string() == "0.999");
+}
+
+void testBasicI8() {
+    udecimal::I8 f0 = udecimal::I8("-123.456");
+    udecimal::I8 f1 = udecimal::I8("-123.456");
+
+    assert(f0 == f1);
+    assert(f1 == f0);
+    assert(f0.to_int() == -123);
+    assert(f1.to_int() == -123);
+    assert(f0.to_string() == "-123.456");
+    assert(f1.to_string() == "-123.456");
+
+    f0 = udecimal::I8("123.456");
+    f1 = udecimal::I8("123.456");
+
+    assert(f0 == f1);
+    assert(f1 == f0);
+    assert(f0.to_int() == 123);
+    assert(f1.to_int() == 123);
+    assert(f0.to_string() == "123.456");
+    assert(f1.to_string() == "123.456");
+
+    f0 = udecimal::I8(-1, 0);
+    f1 = udecimal::I8(-.5) + udecimal::I8(-.5);
+    udecimal::I8 f2 = udecimal::I8(-.3) + udecimal::I8(-.3) + udecimal::I8(-.4);
+
+    assert(f0 == f1);
+    assert(f0 == f2);
+
+    f0 = udecimal::I8(-.999);
+    assert(f0.to_string() == "-0.999");
+
+    f0 = udecimal::I8(1, 0);
+    f1 = udecimal::I8(.5) + (udecimal::I8(.5));
+    f2 = udecimal::I8(.3) + udecimal::I8(.3) + udecimal::I8(.4);
+
+    assert(f0 == f1);
+    assert(f0 == f2);
+
+    f0 = udecimal::I8(.999);
     assert(f0.to_string() == "0.999");
 }
 
@@ -554,7 +596,8 @@ void testDecodeBinaryData() {
 }
 
 int main() {
-    testBasic();
+    testBasicU8();
+    testBasicI8();
     testEqual();
     testFromExp();
     testParse();

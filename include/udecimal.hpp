@@ -72,16 +72,18 @@ inline uint64_t precomputed_pow_10(unsigned int exponent) {
 
 // Decimal is a decimal precision unsigned number (defaults to 11.8 digits).
 // IMPORTANT: this is not designed to be used for signed decimals.
-template <int nPlaces = 8>
+template <int nPlaces = 8, bool Signed = false>
 class Decimal {
    public:
-    uint64_t fp = 0;
+    using IntType = typename std::conditional<Signed, int64_t, uint64_t>::type;
+    IntType fp = 0;
 
-    Decimal(uint64_t fp = 0) : fp(fp) {}
+    Decimal(IntType fp = 0) : fp(fp) {}
 
-    static constexpr uint64_t scale = const_pow<10, nPlaces>();
-    static constexpr int digits = std::numeric_limits<uint64_t>::digits10;
+    static constexpr IntType scale = const_pow<10, nPlaces>();
+    static constexpr int digits = std::numeric_limits<IntType>::digits10;
     static constexpr double MAX = static_cast<double>(const_pow<10, (digits - nPlaces)>() - 1) + (static_cast<double>(scale - 1) / static_cast<double>(scale));
+    static constexpr double MIN = -MAX;
 
     static_assert(nPlaces < digits);
     static_assert(nPlaces > 0);
@@ -100,53 +102,57 @@ class Decimal {
         if (unlikely(std::isnan(f))) {
             throw errInvalidInput;
         }
-        if (unlikely(f >= MAX || f < 0)) {
+        if (unlikely(f >= MAX || f <= MIN)) {
             throw errInvalidInput;
         }
         double round = 0.5;
         if (f < 0) {
             round = -0.5;
         }
-        fp = static_cast<uint64_t>(f * scale + round);
+        fp = static_cast<IntType>(f * scale + round);
     }
 
     // Creates a Decimal for an integer, moving the decimal point n places to the left
     // For example, Decimal(123,1) becomes 12.3. If n > 7, the value is truncated
-    Decimal(uint64_t i, uint32_t n) { fp = newI(i, n); }
+    Decimal(IntType i, uint32_t n) { fp = newI(i, n); }
 
     Decimal(const std::string& s) {
         if (s.find_first_of("eE") != std::string::npos) {
             double f = std::stod(s);
-            fp = static_cast<uint64_t>(f * scale);
+            fp = static_cast<IntType>(f * scale);
             return;
         }
 
         std::size_t period = s.find('.');
-        uint64_t i = 0, f = 0;
+        IntType i = 0, f = 0;
         if (period == std::string::npos) {
-            i = std::stoull(s);
+            i = parseInteger(s);
             if (unlikely(i > MAX)) {
                 throw errTooLarge;
             }
             fp = i * scale;
         } else {
             if (period > 0) {
-                i = std::stoull(s.substr(0, period));
+                i = parseInteger(s.substr(0, period));
                 if (unlikely(i > MAX)) {
                     throw errTooLarge;
                 }
             }
             std::string fs = s.substr(period + 1);
             fs += std::string(max(0, static_cast<int>(nPlaces - fs.length())), '0');
-            f = std::stoull(fs.substr(0, nPlaces));
-            fp = i * scale + f;
+            f = parseInteger(fs.substr(0, nPlaces));
+            if (i < 0) {
+                fp = i * scale - f;
+            } else {
+                fp = i * scale + f;
+            }
         }
     }
 
     // New returns a new fixed-point decimal, value * 10 ^ exp.
-    static Decimal FromExp(uint64_t value, int exp) {
+    static Decimal FromExp(IntType value, int exp) {
         if (exp >= 0) {
-            uint64_t exp_mul = precomputed_pow_10(exp);
+            IntType exp_mul = precomputed_pow_10(exp);
             return {mul(newI(value, 0), newI(exp_mul, 0))};
         }
 
@@ -160,10 +166,21 @@ class Decimal {
 
     // Add adds f0 to f producing a Decimal.
     Decimal operator+(const Decimal& f0) const {
-        if (unlikely(f0.fp > UINT64_MAX - fp)) {
-            throw errOverflow;
+        if constexpr (Signed) {
+            if (unlikely(fp > 0 && f0.fp > 0 && fp > MAX - f0.fp)) {
+                throw errOverflow;
+            }
+            if (unlikely(fp < 0 && f0.fp < 0 && fp < MIN - f0.fp)) {
+                throw errOverflow;
+            }
+            IntType sum = fp + f0.fp;
+            return {sum};
+        } else {
+            if (unlikely(f0.fp > MAX - fp)) {
+                throw errOverflow;
+            }
+            return {fp + f0.fp};
         }
-        return {fp + f0.fp};
     }
 
     // Adds f0 to the current Decimal object.
@@ -177,10 +194,20 @@ class Decimal {
 
     // Sub subtracts f0 from f producing a Decimal.
     Decimal operator-(const Decimal& f0) const {
-        if (unlikely(fp < f0.fp)) {
-            throw errOverflow;
+        if constexpr (Signed) {
+            if (unlikely(fp > 0 && f0.fp < 0 && fp - f0.fp > MAX)) {
+                throw errOverflow;
+            }
+            if (unlikely(fp < 0 && f0.fp > 0 && fp - f0.fp < MIN)) {
+                throw errOverflow;
+            }
+            return {fp - f0.fp};
+        } else {
+            if (unlikely(fp < f0.fp)) {
+                throw errOverflow;
+            }
+            return {fp - f0.fp};
         }
-        return {fp - f0.fp};
     }
 
     // Subtracts f0 from the current Decimal object.
@@ -249,7 +276,7 @@ class Decimal {
         }
     }
 
-    [[nodiscard]] uint64_t to_int() const { return fp / scale; }
+    [[nodiscard]] IntType to_int() const { return fp / scale; }
 
     [[nodiscard]] double to_frac() const { return static_cast<double>(fp % scale) / scale; }
 
@@ -262,15 +289,15 @@ class Decimal {
             return fp - (fp % scale);
         }
 
-        uint64_t frac = fp % scale;
-        uint64_t f0 = fp - frac;
+        IntType frac = fp % scale;
+        IntType f0 = fp - frac;
 
         auto pow = precomputed_pow_10(nPlaces - n);
         frac += pow / 2;  // rounding factor
         frac /= pow;
         frac *= pow;
 
-        uint64_t new_fp = f0 + frac;
+        IntType new_fp = f0 + frac;
 
         return {new_fp};
     }
@@ -287,12 +314,12 @@ class Decimal {
             if constexpr (has_int128) {
                 return Decimal<toPlaces>(div(fp, scale), nPlaces);
             } else {
-                static constexpr uint64_t factor = scale / const_pow<10, toPlaces>();
+                static constexpr IntType factor = scale / const_pow<10, toPlaces>();
                 return Decimal<toPlaces>(fp / factor);
             }
         } else {
-            static constexpr uint64_t factor = const_pow<10, toPlaces>() / scale;
-            if (unlikely(fp > std::numeric_limits<uint64_t>::max() / factor)) {
+            static constexpr IntType factor = const_pow<10, toPlaces>() / scale;
+            if (unlikely(fp > std::numeric_limits<IntType>::max() / factor)) {
                 throw errOverflow;
             }
             return Decimal<toPlaces>(fp * factor);
@@ -302,11 +329,11 @@ class Decimal {
     // decode_binary reads from a byte vector and sets the Decimal value
     // It also updates the offset.
     void decode_binary(const std::vector<uint8_t>& data, size_t& offset) {
-        uint64_t value = 0;
+        IntType value = 0;
         int shift = 0;
         for (; offset < data.size() - 1; ++offset) {
             uint8_t byte = data[offset];
-            value |= static_cast<uint64_t>(byte & 0x7F) << shift;
+            value |= static_cast<IntType>(byte & 0x7F) << shift;
             if ((byte & 0x80) == 0) {
                 break;
             }
@@ -334,7 +361,7 @@ class Decimal {
 
     // encode_binary serializes the Decimal value into a byte vector and updates the offset.
     void encode_binary(std::vector<uint8_t>& data, size_t& offset) const {
-        uint64_t value = fp;
+        IntType value = fp;
         do {
             uint8_t byte = value & 0x7F;
             value >>= 7;
@@ -367,14 +394,22 @@ class Decimal {
     }
 
    private:
-    static uint64_t mul(uint64_t fp, uint64_t f0) {
-        uint64_t fp_a = fp / scale;
-        uint64_t fp_b = fp % scale;
+    IntType parseInteger(const std::string& s) {
+        if constexpr (Signed) {
+            return std::stoll(s);
+        } else {
+            return std::stoull(s);
+        }
+    }
 
-        uint64_t fp0_a = f0 / scale;
-        uint64_t fp0_b = f0 % scale;
+    static IntType mul(IntType fp, IntType f0) {
+        IntType fp_a = fp / scale;
+        IntType fp_b = fp % scale;
 
-        uint64_t result = 0;
+        IntType fp0_a = f0 / scale;
+        IntType fp0_b = f0 % scale;
+
+        IntType result = 0;
 
         if (fp0_a != 0) {
             result = fp_a * fp0_a;
@@ -391,9 +426,9 @@ class Decimal {
         return result;
     }
 
-    using DivT = typename std::conditional<has_int128, uint64_t, double>::type;
+    using DivT = typename std::conditional<has_int128, IntType, double>::type;
 
-    static DivT div(uint64_t fp, uint64_t f0) {
+    static DivT div(IntType fp, IntType f0) {
         if (unlikely(f0 == 0)) {
             throw errDivByZero;
         }
@@ -403,11 +438,11 @@ class Decimal {
             __int128 remainder = temp % f0;
             temp /= f0;
 
-            if (unlikely(temp > std::numeric_limits<uint64_t>::max())) {
+            if (unlikely(temp > std::numeric_limits<IntType>::max())) {
                 throw errOverflow;
             }
 
-            auto quotient = static_cast<uint64_t>(temp);
+            auto quotient = static_cast<IntType>(temp);
 
             if (remainder * 2 >= f0) {
                 ++quotient;  // rounding factor
@@ -419,7 +454,7 @@ class Decimal {
         }
     }
 
-    static uint64_t newI(uint64_t i, uint32_t n) {
+    static IntType newI(IntType i, uint32_t n) {
         if (n > nPlaces) {
             auto pow = precomputed_pow_10(n - nPlaces);
             i += pow / 2;  // rounding factor
@@ -436,10 +471,12 @@ class Decimal {
             return zero_str;
         }
 
-        std::array<char, 24> buf;
+        bool is_negative = (fp < 0);
+        IntType val = is_negative ? -fp : fp;
+
+        std::array<char, 25> buf;
         int i = sizeof(buf) - 1;
         int idec = i - nPlaces;
-        uint64_t val = fp;
 
         while (val >= 10 || i >= idec) {
             buf[i] = static_cast<char>(val % 10 + '0');
@@ -452,20 +489,29 @@ class Decimal {
         }
 
         buf[i] = static_cast<char>(val + '0');
+
+        if (is_negative) {
+            i--;
+            buf[i] = '-';
+        }
+
         return {std::next(buf.begin(), i), buf.end()};
     }
 
     static int max(int a, int b) { return (a > b) ? a : b; }
 };
 
-template <int nPlaces>
-const std::runtime_error Decimal<nPlaces>::errDivByZero("division by zero");
-template <int nPlaces>
-const std::overflow_error Decimal<nPlaces>::errTooLarge("number is too large");
-template <int nPlaces>
-const std::overflow_error Decimal<nPlaces>::errOverflow("decimal overflow");
-template <int nPlaces>
-const std::invalid_argument Decimal<nPlaces>::errInvalidInput("invalid input");
+template <int nPlaces, bool Signed>
+const std::runtime_error Decimal<nPlaces, Signed>::errDivByZero("division by zero");
+template <int nPlaces, bool Signed>
+const std::overflow_error Decimal<nPlaces, Signed>::errTooLarge("number is too large");
+template <int nPlaces, bool Signed>
+const std::overflow_error Decimal<nPlaces, Signed>::errOverflow("decimal overflow");
+template <int nPlaces, bool Signed>
+const std::invalid_argument Decimal<nPlaces, Signed>::errInvalidInput("invalid input");
+
+using U8 = Decimal<8, false>;
+using I8 = Decimal<8, true>;
 
 }  // namespace udecimal
 
