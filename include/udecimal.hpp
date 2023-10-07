@@ -41,7 +41,7 @@ constexpr uint64_t const_pow() {
     return result;
 }
 
-uint64_t precomputed_pow_10(unsigned int exponent) {
+inline uint64_t precomputed_pow_10(unsigned int exponent) {
     constexpr std::array<uint64_t, 20> powers_of_10 = {1,
                                                        10,
                                                        100,
