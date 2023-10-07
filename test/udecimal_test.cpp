@@ -188,7 +188,7 @@ void testAddSub() {
 
     Decimal<> f2 = f0 - f1;
     f2 = f2 - f1;
-    f2 = f2 - f1;
+    f2 -= f1;
 
     assert(f2.to_string() == "0.0000001");
 
@@ -196,9 +196,11 @@ void testAddSub() {
     assert(f2.to_string() == "0");
 
     f0 = Decimal<>("0");
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 5; i++) {
         f0 = f0 + Decimal<>("0.1");
+        f0 += Decimal<>("0.1");
     }
+
     assert(f0.to_string() == "1");
 }
 
@@ -222,6 +224,12 @@ void testMulDiv() {
     assert(f2.to_string() == "100001000");
 
     f2 = f2 / f1;
+    assert(f2 == f0);
+
+    f2 *= f1;
+    assert(f2.to_string() == "100001000");
+
+    f2 /= f1;
     assert(f2 == f0);
 
     f0 = Decimal<>("2");

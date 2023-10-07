@@ -166,6 +166,15 @@ class Decimal {
         return {fp + f0.fp};
     }
 
+    // Adds f0 to the current Decimal object.
+    Decimal& operator+=(const Decimal& f0) {
+        if (unlikely(f0.fp > UINT64_MAX - fp)) {
+            throw errOverflow;
+        }
+        fp += f0.fp;
+        return *this;
+    }
+
     // Sub subtracts f0 from f producing a Decimal.
     Decimal operator-(const Decimal& f0) const {
         if (unlikely(fp < f0.fp)) {
@@ -174,9 +183,30 @@ class Decimal {
         return {fp - f0.fp};
     }
 
+    // Subtracts f0 from the current Decimal object.
+    Decimal& operator-=(const Decimal& f0) {
+        if (unlikely(fp < f0.fp)) {
+            throw errOverflow;
+        }
+        fp -= f0.fp;
+        return *this;
+    }
+
     Decimal operator*(const Decimal& f0) { return {mul(fp, f0.fp)}; }
 
+    // multiplies the current Decimal object by f0.
+    Decimal& operator*=(const Decimal& f0) {
+        fp = mul(fp, f0.fp);
+        return *this;
+    }
+
     Decimal operator/(const Decimal& f0) const { return {div(fp, f0.fp)}; }
+
+    // divides the current Decimal object by f0.
+    Decimal& operator/=(const Decimal& f0) {
+        fp = div(fp, f0.fp);
+        return *this;
+    }
 
     bool operator==(const Decimal& rhs) const { return fp == rhs.fp; }
     bool operator!=(const Decimal& rhs) const { return fp != rhs.fp; }
