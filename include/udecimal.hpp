@@ -1,3 +1,6 @@
+#ifndef UDECIMAL_H
+#define UDECIMAL_H
+
 #include <sys/types.h>
 
 #include <array>
@@ -435,3 +438,5 @@ template <int nPlaces>
 const std::invalid_argument Decimal<nPlaces>::errInvalidInput("invalid input");
 
 }  // namespace udecimal
+
+#endif  // UDECIMAL_H
