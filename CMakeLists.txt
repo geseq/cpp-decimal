@@ -48,7 +48,7 @@ if (ENABLE_TESTING)
         ENDFOREACH ()
 
         set (CMAKE_CTEST_ARGUMENTS "-L;test")
-        add_custom_target(bench COMMAND ctest -L bench -V)
+        add_custom_target(fastchan_bench COMMAND ctest -L bench -V)
     endif()
 endif()
 
