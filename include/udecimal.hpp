@@ -70,12 +70,32 @@ inline uint64_t precomputed_pow_10(unsigned int exponent) {
     return powers_of_10[exponent];
 }
 
+enum Type {
+    Signed,
+    Unsigned
+};
+
 // Decimal is a decimal precision unsigned number (defaults to 11.8 digits).
 // IMPORTANT: this is not designed to be used for signed decimals.
-template <int nPlaces = 8, bool Signed = false>
+template <int nPlaces = 8, Type S = Unsigned>
 class Decimal {
+   private:
+    template <Type T>
+    struct IntTypeMap;
+
+    template <>
+    struct IntTypeMap<Signed> {
+        using type = int64_t;
+    };
+
+    template <>
+    struct IntTypeMap<Unsigned> {
+        using type = uint64_t;
+    };
+
    public:
-    using IntType = typename std::conditional<Signed, int64_t, uint64_t>::type;
+    using IntType = typename IntTypeMap<S>::type;
+
     IntType fp = 0;
 
     Decimal(IntType fp = 0) : fp(fp) {}
@@ -166,7 +186,7 @@ class Decimal {
 
     // Add adds f0 to f producing a Decimal.
     Decimal operator+(const Decimal& f0) const {
-        if constexpr (Signed) {
+        if constexpr (S == Signed) {
             if (unlikely(fp > 0 && f0.fp > 0 && fp > MAX - f0.fp)) {
                 throw errOverflow;
             }
@@ -194,7 +214,7 @@ class Decimal {
 
     // Sub subtracts f0 from f producing a Decimal.
     Decimal operator-(const Decimal& f0) const {
-        if constexpr (Signed) {
+        if constexpr (S == Signed) {
             if (unlikely(fp > 0 && f0.fp < 0 && fp - f0.fp > MAX)) {
                 throw errOverflow;
             }
@@ -395,7 +415,7 @@ class Decimal {
 
    private:
     IntType parseInteger(const std::string& s) {
-        if constexpr (Signed) {
+        if constexpr (S == Signed) {
             return std::stoll(s);
         } else {
             return std::stoull(s);
@@ -472,7 +492,7 @@ class Decimal {
         }
 
         IntType val = fp;
-        if constexpr (Signed) {
+        if constexpr (S == Signed) {
             if (fp < 0) {
                 val = -fp;
             }
@@ -494,7 +514,7 @@ class Decimal {
 
         buf[i] = static_cast<char>(val + '0');
 
-        if constexpr (Signed) {
+        if constexpr (S == Signed) {
             if (fp < 0) {
                 i--;
                 buf[i] = '-';
@@ -507,17 +527,17 @@ class Decimal {
     static int max(int a, int b) { return (a > b) ? a : b; }
 };
 
-template <int nPlaces, bool Signed>
-const std::runtime_error Decimal<nPlaces, Signed>::errDivByZero("division by zero");
-template <int nPlaces, bool Signed>
-const std::overflow_error Decimal<nPlaces, Signed>::errTooLarge("number is too large");
-template <int nPlaces, bool Signed>
-const std::overflow_error Decimal<nPlaces, Signed>::errOverflow("decimal overflow");
-template <int nPlaces, bool Signed>
-const std::invalid_argument Decimal<nPlaces, Signed>::errInvalidInput("invalid input");
+template <int nPlaces, Type S>
+const std::runtime_error Decimal<nPlaces, S>::errDivByZero("division by zero");
+template <int nPlaces, Type S>
+const std::overflow_error Decimal<nPlaces, S>::errTooLarge("number is too large");
+template <int nPlaces, Type S>
+const std::overflow_error Decimal<nPlaces, S>::errOverflow("decimal overflow");
+template <int nPlaces, Type S>
+const std::invalid_argument Decimal<nPlaces, S>::errInvalidInput("invalid input");
 
-using U8 = Decimal<8, false>;
-using I8 = Decimal<8, true>;
+using U8 = Decimal<8, Unsigned>;
+using I8 = Decimal<8, Signed>;
 
 }  // namespace udecimal
 
