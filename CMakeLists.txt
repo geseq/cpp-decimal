@@ -13,21 +13,27 @@ option(ENABLE_TESTING "Enable test target generation" OFF)
 option(BENCHMARK_ENABLE_TESTING "run benchmarks" OFF)
 
 if (ENABLE_TESTING)
+    include(cmake/CPM.cmake)
+    CPMUsePackageLock(package-lock.cmake)
+
+    CPMAddPackage( NAME googletest GITHUB_REPOSITORY google/googletest VERSION 1.14.0 )
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    include_directories(googletest_SOURCE_DIR)
+    enable_testing()
+
     FILE(GLOB tests CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/test/*)
     FOREACH (test ${tests})
         get_filename_component(test_name ${test} NAME)
         message("Adding test: " ${test_name})
         add_executable(${test_name} ${PROJECT_SOURCE_DIR}/test/${test_name})
-        target_link_libraries(${test_name} PRIVATE ${CMAKE_THREAD_LIBS_INIT} udecimal)
+        target_link_libraries(${test_name} ${CMAKE_THREAD_LIBS_INIT})
+        target_link_libraries(${test_name} PRIVATE udecimal gtest gtest_main)
         add_test(${test_name} ${test_name})
         set_property(TEST ${test_name} PROPERTY LABELS "test")
     ENDFOREACH ()
 
 
     if (BENCHMARK_ENABLE_TESTING)
-        include(cmake/CPM.cmake)
-        CPMUsePackageLock(package-lock.cmake)
-
         CPMAddPackage( NAME benchmark GITHUB_REPOSITORY google/benchmark VERSION 1.5.2 OPTIONS "BENCHMARK_ENABLE_TESTING Off")
 
         if(TARGET benchmark::benchmark)

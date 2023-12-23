@@ -1,266 +1,391 @@
 #include "udecimal.hpp"
 
+#include <gtest/gtest.h>
+
 #include <cassert>
 #include <cstdint>
+#include <cwchar>
 #include <iostream>
 
 using udecimal::Decimal;
 
-void testBasicU8() {
+class DecimalTest : public ::testing::Test {
+   protected:
+    void SetUp() override {}
+
+    void TearDown() override {}
+};
+
+TEST_F(DecimalTest, BasicU8) {
     udecimal::U8 f0 = udecimal::U8("123.456");
     udecimal::U8 f1 = udecimal::U8("123.456");
 
-    assert(f0 == f1);
-    assert(f1 == f0);
-    assert(f0.to_int() == 123);
-    assert(f1.to_int() == 123);
-    assert(f0.to_string() == "123.456");
-    assert(f1.to_string() == "123.456");
+    ASSERT_EQ(f0, f1);
+    ASSERT_EQ(f1, f0);
+    ASSERT_EQ(f0.to_int(), 123);
+    ASSERT_EQ(f1.to_int(), 123);
+    ASSERT_EQ(f0.to_string(), "123.456");
+    ASSERT_EQ(f1.to_string(), "123.456");
 
     f0 = udecimal::U8(1, 0);
     f1 = udecimal::U8(.5) + (udecimal::U8(.5));
     udecimal::U8 f2 = udecimal::U8(.3) + udecimal::U8(.3) + udecimal::U8(.4);
 
-    assert(f0 == f1);
-    assert(f0 == f2);
+    ASSERT_EQ(f0, f1);
+    ASSERT_EQ(f0, f2);
 
     f0 = udecimal::U8(.999);
-    assert(f0.to_string() == "0.999");
+    ASSERT_EQ(f0.to_string(), "0.999");
 }
 
-void testBasicI8() {
+TEST_F(DecimalTest, BasicI8) {
     udecimal::I8 f0 = udecimal::I8("-123.456");
     udecimal::I8 f1 = udecimal::I8("-123.456");
 
-    assert(f0 == f1);
-    assert(f1 == f0);
-    assert(f0.to_int() == -123);
-    assert(f1.to_int() == -123);
-    assert(f0.to_string() == "-123.456");
-    assert(f1.to_string() == "-123.456");
+    ASSERT_EQ(f0, f1);
+    ASSERT_EQ(f1, f0);
+    ASSERT_EQ(f0.to_int(), -123);
+    ASSERT_EQ(f1.to_int(), -123);
+    ASSERT_EQ(f0.to_string(), "-123.456");
+    ASSERT_EQ(f1.to_string(), "-123.456");
 
     f0 = udecimal::I8("123.456");
     f1 = udecimal::I8("123.456");
 
-    assert(f0 == f1);
-    assert(f1 == f0);
-    assert(f0.to_int() == 123);
-    assert(f1.to_int() == 123);
-    assert(f0.to_string() == "123.456");
-    assert(f1.to_string() == "123.456");
+    ASSERT_EQ(f0, f1);
+    ASSERT_EQ(f1, f0);
+    ASSERT_EQ(f0.to_int(), 123);
+    ASSERT_EQ(f1.to_int(), 123);
+    ASSERT_EQ(f0.to_string(), "123.456");
+    ASSERT_EQ(f1.to_string(), "123.456");
 
     f0 = udecimal::I8(-1, 0);
     f1 = udecimal::I8(-.5) + udecimal::I8(-.5);
     udecimal::I8 f2 = udecimal::I8(-.3) + udecimal::I8(-.3) + udecimal::I8(-.4);
 
-    assert(f0 == f1);
-    assert(f0 == f2);
+    ASSERT_EQ(f0, f1);
+    ASSERT_EQ(f0, f2);
 
     f0 = udecimal::I8(-.999);
-    assert(f0.to_string() == "-0.999");
+    ASSERT_EQ(f0.to_string(), "-0.999");
 
     f0 = udecimal::I8(1, 0);
     f1 = udecimal::I8(.5) + (udecimal::I8(.5));
     f2 = udecimal::I8(.3) + udecimal::I8(.3) + udecimal::I8(.4);
 
-    assert(f0 == f1);
-    assert(f0 == f2);
+    ASSERT_EQ(f0, f1);
+    ASSERT_EQ(f0, f2);
 
     f0 = udecimal::I8(.999);
-    assert(f0.to_string() == "0.999");
+    ASSERT_EQ(f0.to_string(), "0.999");
 }
 
-void testEqual() {
-    Decimal<> f0 = udecimal::Decimal();
-    Decimal<> f1 = Decimal("123.456");
+TEST_F(DecimalTest, EqualU8) {
+    udecimal::U8 f0{};
+    udecimal::U8 f1("123.456");
 
-    assert(f0 != f1);
-    assert(f0 != f1);
-    assert(f1 != f0);
+    ASSERT_NE(f0, f1);
+    ASSERT_NE(f1, f0);
 
-    f1 = udecimal::Decimal(0, 0);
-    assert(f0 == f1);
-    assert(f0.to_int() == 0);
+    f1 = udecimal::U8(0, 0);
+    ASSERT_EQ(f0, f1);
+    ASSERT_EQ(f0.to_int(), 0);
 }
 
-void testFromExp() {
-    Decimal<> f = Decimal<>::FromExp(123, 1);
-    assert(f.to_string() == "1230");
+TEST_F(DecimalTest, EqualI8) {
+    udecimal::I8 f0{};
+    udecimal::I8 f1("123.456");
+    udecimal::I8 f2("-123.456");
 
-    f = Decimal<>::FromExp(123, 0);
-    assert(f.to_string() == "123");
+    ASSERT_NE(f0, f1);
+    ASSERT_NE(f0, f2);
+    ASSERT_NE(f1, f0);
+    ASSERT_NE(f1, f2);
+    ASSERT_NE(f2, f0);
+    ASSERT_NE(f2, f1);
 
-    f = Decimal<>::FromExp(123, -1);
-    assert(f.to_string() == "12.3");
+    f1 = udecimal::I8(0, 0);
+    ASSERT_EQ(f0, f1);
+    ASSERT_EQ(f0.to_int(), 0);
 
-    f = Decimal<>::FromExp(123456789001, -9);
-    assert(f.to_string() == "123.456789");
-
-    f = Decimal<>::FromExp(123456789012, -9);
-    assert(f.to_string(7) == "123.4567890");
-
-    f = Decimal<>::FromExp(123456789012, -9);
-    assert(f.to_string(8) == "123.45678901");
+    f1 = udecimal::I8(-123456, 3);
+    ASSERT_EQ(f2, f1);
+    ASSERT_EQ(f2.to_int(), -123);
 }
 
-void testParse() {
-    try {
-        Decimal<>("123");
-    } catch (std::invalid_argument& e) {
-        assert(false);
-    }
+TEST_F(DecimalTest, FromExpU8) {
+    auto f = udecimal::U8::FromExp(123, 1);
+    ASSERT_EQ(f.to_string(), "1230");
 
-    try {
-        auto val = Decimal<>(",123456");
-        assert(false);
-    } catch (std::invalid_argument& e) {
-        // Expected
-    }
+    f = udecimal::U8::FromExp(123, 0);
+    ASSERT_EQ(f.to_string(), "123");
 
-    try {
-        Decimal<>("abc");
-        assert(false);
-    } catch (std::invalid_argument& e) {
-        // Expected
-    }
+    f = udecimal::U8::FromExp(123, -1);
+    ASSERT_EQ(f.to_string(), "12.3");
+
+    f = udecimal::U8::FromExp(123456789001, -9);
+    ASSERT_EQ(f.to_string(), "123.456789");
+
+    f = udecimal::U8::FromExp(123456789012, -9);
+    ASSERT_EQ(f.to_string(7), "123.4567890");
+
+    f = udecimal::U8::FromExp(123456789012, -9);
+    ASSERT_EQ(f.to_string(8), "123.45678901");
 }
 
-void testNewI() {
-    Decimal<> f = Decimal(123, 1);
-    assert(f.to_string() == "12.3");
+TEST_F(DecimalTest, FromExpI8) {
+    auto f = udecimal::I8::FromExp(123, 1);
+    ASSERT_EQ(f.to_string(), "1230");
 
-    f = Decimal<>(123, 0);
-    assert(f.to_string() == "123");
+    f = udecimal::I8::FromExp(123, 0);
+    ASSERT_EQ(f.to_string(), "123");
 
-    f = Decimal<>(123, 5);
-    assert(f.to_string() == "0.00123");
+    f = udecimal::I8::FromExp(123, -1);
+    ASSERT_EQ(f.to_string(), "12.3");
 
-    f = Decimal<>(123456789001, 9);
-    assert(f.to_string() == "123.456789");
+    f = udecimal::I8::FromExp(123456789001, -9);
+    ASSERT_EQ(f.to_string(), "123.456789");
 
-    f = Decimal<>(123456789012, 9);
-    assert(f.to_string(7) == "123.4567890");
-    assert(f.to_string() == "123.45678901");
+    f = udecimal::I8::FromExp(123456789012, -9);
+    ASSERT_EQ(f.to_string(7), "123.4567890");
 
-    f = Decimal<>(123456789012, 9);
-    assert(f.to_string(8) == "123.45678901");
+    f = udecimal::I8::FromExp(123456789012, -9);
+    ASSERT_EQ(f.to_string(8), "123.45678901");
+
+    f = udecimal::I8::FromExp(-123, 1);
+    ASSERT_EQ(f.to_string(), "-1230");
+
+    f = udecimal::I8::FromExp(-123, 0);
+    ASSERT_EQ(f.to_string(), "-123");
+
+    f = udecimal::I8::FromExp(-123, -1);
+    ASSERT_EQ(f.to_string(), "-12.3");
+
+    f = udecimal::I8::FromExp(-123456789001, -9);
+    ASSERT_EQ(f.to_string(), "-123.456789");
+
+    f = udecimal::I8::FromExp(-123456789012, -9);
+    ASSERT_EQ(f.to_string(7), "-123.4567890");
+
+    f = udecimal::I8::FromExp(-123456789012, -9);
+    ASSERT_EQ(f.to_string(8), "-123.45678901");
+}
+
+TEST_F(DecimalTest, Parse) {
+    ASSERT_NO_THROW(udecimal::U8("123"));
+    ASSERT_NO_THROW(udecimal::I8("123"));
+
+    ASSERT_THROW(udecimal::U8(",123456"), std::invalid_argument);
+    ASSERT_THROW(udecimal::I8(",123456"), std::invalid_argument);
+    ASSERT_THROW(udecimal::U8("abc"), std::invalid_argument);
+    ASSERT_THROW(udecimal::I8("abc"), std::invalid_argument);
+}
+
+TEST_F(DecimalTest, NewIU8) {
+    udecimal::U8 f = udecimal::U8(123, 1);
+    ASSERT_EQ(f.to_string(), "12.3");
+
+    f = udecimal::U8(123, 0);
+    ASSERT_EQ(f.to_string(), "123");
+
+    f = udecimal::U8(123, 5);
+    ASSERT_EQ(f.to_string(), "0.00123");
+
+    f = udecimal::U8(123456789001, 9);
+    ASSERT_EQ(f.to_string(), "123.456789");
+
+    f = udecimal::U8(123456789012, 9);
+    ASSERT_EQ(f.to_string(7), "123.4567890");
+    ASSERT_EQ(f.to_string(), "123.45678901");
+
+    f = udecimal::U8(123456789012, 9);
+    ASSERT_EQ(f.to_string(8), "123.45678901");
 
     auto g = Decimal<3>(123, 5);
-    assert(g.to_string() == "0.001");
+    ASSERT_EQ(g.to_string(), "0.001");
 }
 
-void testMaxValue() {
-    Decimal<> f0 = Decimal("12345678901");
-    assert(f0.MAX == 99999999999.99999999);
-    assert(f0.to_string() == "12345678901");
+TEST_F(DecimalTest, NewII8) {
+    udecimal::I8 f = udecimal::I8(123, 1);
+    ASSERT_EQ(f.to_string(), "12.3");
 
-    try {
-        Decimal<>("123456789012");
-        assert(false);
-    } catch (std::overflow_error& e) {
-        std::cout << e.what() << std::endl;
-    }
+    f = udecimal::I8(123, 0);
+    ASSERT_EQ(f.to_string(), "123");
 
-    try {
-        Decimal<>("-12345678901");
-        assert(false);
-    } catch (std::overflow_error& e) {
-        std::cout << e.what() << std::endl;
-    }
+    f = udecimal::I8(123, 5);
+    ASSERT_EQ(f.to_string(), "0.00123");
 
-    try {
-        Decimal<>("-123456789012");
-        assert(false);
-    } catch (std::overflow_error& e) {
-        std::cout << e.what() << std::endl;
-    }
+    f = udecimal::I8(123456789001, 9);
+    ASSERT_EQ(f.to_string(), "123.456789");
 
-    f0 = Decimal<>("99999999999");
-    assert(f0.to_string() == "99999999999");
+    f = udecimal::I8(123456789012, 9);
+    ASSERT_EQ(f.to_string(7), "123.4567890");
+    ASSERT_EQ(f.to_string(), "123.45678901");
 
-    f0 = Decimal<>("9.99999999");
-    assert(f0.to_string() == "9.99999999");
+    f = udecimal::I8(123456789012, 9);
+    ASSERT_EQ(f.to_string(8), "123.45678901");
 
-    f0 = Decimal<>("99999999999.99999999");
-    assert(f0.to_string() == "99999999999.99999999");
+    f = udecimal::I8(-123, 1);
+    ASSERT_EQ(f.to_string(), "-12.3");
 
-    f0 = Decimal<>("99999999999.12345678901234567890");
-    assert(f0.to_string() == "99999999999.12345678");
+    f = udecimal::I8(-123, 0);
+    ASSERT_EQ(f.to_string(), "-123");
+
+    f = udecimal::I8(-123, 5);
+    ASSERT_EQ(f.to_string(), "-0.00123");
+
+    f = udecimal::I8(-123456789001, 9);
+    ASSERT_EQ(f.to_string(), "-123.456789");
+
+    f = udecimal::I8(-123456789012, 9);
+    ASSERT_EQ(f.to_string(7), "-123.4567890");
+    ASSERT_EQ(f.to_string(), "-123.45678901");
+
+    f = udecimal::I8(-123456789012, 9);
+    ASSERT_EQ(f.to_string(8), "-123.45678901");
+
+    auto g = Decimal<3, udecimal::Signed>(123, 5);
+    ASSERT_EQ(g.to_string(), "0.001");
+
+    g = Decimal<3, udecimal::Signed>(-123, 5);
+    ASSERT_EQ(g.to_string(), "-0.001");
+}
+
+TEST_F(DecimalTest, MaxValueU8) {
+    udecimal::U8 f0 = udecimal::U8("12345678901");
+    ASSERT_EQ(f0.MAX, 99999999999.99999999);
+    ASSERT_EQ(f0.to_string(), "12345678901");
+
+    ASSERT_THROW(udecimal::U8("123456789012"), std::overflow_error);
+    ASSERT_THROW(udecimal::U8("-12345678901"), std::overflow_error);
+    ASSERT_THROW(udecimal::U8("-123456789012"), std::overflow_error);
+
+    f0 = udecimal::U8("99999999999");
+    ASSERT_EQ(f0.to_string(), "99999999999");
+
+    f0 = udecimal::U8("9.99999999");
+    ASSERT_EQ(f0.to_string(), "9.99999999");
+
+    f0 = udecimal::U8("99999999999.99999999");
+    ASSERT_EQ(f0.to_string(), "99999999999.99999999");
+
+    f0 = udecimal::U8("99999999999.12345678901234567890");
+    ASSERT_EQ(f0.to_string(), "99999999999.12345678");
+}
+
+TEST_F(DecimalTest, MaxValueI8) {
+    udecimal::I8 f0 = udecimal::I8("1234567890");
+    ASSERT_EQ(f0.MAX, 9999999999.99999999);
+    ASSERT_EQ(f0.to_string(), "1234567890");
+
+    ASSERT_THROW(udecimal::I8("12345678901"), std::overflow_error);
+    ASSERT_THROW(udecimal::I8("123456789012"), std::overflow_error);
+
+    f0 = udecimal::I8("9999999999");
+    ASSERT_EQ(f0.to_string(), "9999999999");
+
+    f0 = udecimal::I8("9.99999999");
+    ASSERT_EQ(f0.to_string(), "9.99999999");
+
+    f0 = udecimal::I8("9999999999.99999999");
+    ASSERT_EQ(f0.to_string(), "9999999999.99999999");
+
+    f0 = udecimal::I8("9999999999.12345678901234567890");
+    ASSERT_EQ(f0.to_string(), "9999999999.12345678");
+
+    f0 = udecimal::I8("-1234567890");
+    ASSERT_EQ(f0.MAX, 9999999999.99999999);
+    ASSERT_EQ(f0.to_string(), "-1234567890");
+
+    ASSERT_THROW(udecimal::I8("-12345678901"), std::overflow_error);
+    ASSERT_THROW(udecimal::I8("-123456789012"), std::overflow_error);
+
+    f0 = udecimal::I8("-9999999999");
+    ASSERT_EQ(f0.to_string(), "-9999999999");
+
+    f0 = udecimal::I8("-9.99999999");
+    ASSERT_EQ(f0.to_string(), "-9.99999999");
+
+    f0 = udecimal::I8("-9999999999.99999999");
+    ASSERT_EQ(f0.to_string(), "-9999999999.99999999");
+
+    f0 = udecimal::I8("-9999999999.12345678901234567890");
+    ASSERT_EQ(f0.to_string(), "-9999999999.12345678");
 }
 
 void testToDouble() {
-    auto f0 = Decimal<>("123.456");
-    auto f1 = Decimal<>(123.456);
+    auto f0 = udecimal::U8("123.456");
+    auto f1 = udecimal::U8(123.456);
 
     assert(f0 == f1);
 
-    f1 = Decimal<>(0.0001);
+    f1 = udecimal::U8(0.0001);
 
     assert(f1.to_string() == "0.0001");
 
-    f1 = Decimal<>(".1");
+    f1 = udecimal::U8(".1");
     assert(f1.to_string() == "0.1");
 
-    auto f2 = Decimal<>(Decimal(f1.to_double()).to_string());
+    auto f2 = udecimal::U8(udecimal::U8(f1.to_double()).to_string());
     assert(f1 == f2);
 }
 
 void testInfinite() {
-    auto f0 = Decimal<>("0.10");
-    auto f1 = Decimal<>(0.10);
+    auto f0 = udecimal::U8("0.10");
+    auto f1 = udecimal::U8(0.10);
 
     assert(f0 == f1);
 
-    auto f2 = Decimal<>(0.0);
+    auto f2 = udecimal::U8(0.0);
     for (int i = 0; i < 3; i++) {
-        f2 = f2 + Decimal<>(0.10);
+        f2 = f2 + udecimal::U8(0.10);
     }
     assert(f2.to_string() == "0.3");
 
-    f2 = Decimal<>(0.0);
+    f2 = udecimal::U8(0.0);
     for (int i = 0; i < 10; i++) {
-        f2 = f2 + Decimal<>(0.10);
+        f2 = f2 + udecimal::U8(0.10);
     }
     assert(f2.to_string() == "1");
 }
 
 void testAddSub() {
-    Decimal<> f0 = Decimal("1");
-    Decimal<> f1 = Decimal("0.3333333");
+    udecimal::U8 f0 = udecimal::U8("1");
+    udecimal::U8 f1 = udecimal::U8("0.3333333");
 
-    Decimal<> f2 = f0 - f1;
+    udecimal::U8 f2 = f0 - f1;
     f2 = f2 - f1;
     f2 -= f1;
 
     assert(f2.to_string() == "0.0000001");
 
-    f2 = f2 - Decimal<>("0.0000001");
+    f2 = f2 - udecimal::U8("0.0000001");
     assert(f2.to_string() == "0");
 
-    f0 = Decimal<>("0");
+    f0 = udecimal::U8("0");
     for (int i = 0; i < 5; i++) {
-        f0 = f0 + Decimal<>("0.1");
-        f0 += Decimal<>("0.1");
+        f0 = f0 + udecimal::U8("0.1");
+        f0 += udecimal::U8("0.1");
     }
 
     assert(f0.to_string() == "1");
 }
 
 void testMulDiv() {
-    Decimal<> f0("123.456");
-    Decimal<> f1("1000");
+    udecimal::U8 f0("123.456");
+    udecimal::U8 f1("1000");
 
-    Decimal<> f2 = f0 * f1;
+    udecimal::U8 f2 = f0 * f1;
     assert(f2.to_string() == "123456");
 
-    f0 = Decimal<>("123456");
-    f1 = Decimal<>("0.0001");
+    f0 = udecimal::U8("123456");
+    f1 = udecimal::U8("0.0001");
 
     f2 = f0 * f1;
     assert(f2.to_string() == "12.3456");
 
-    f0 = Decimal<>("10000.1");
-    f1 = Decimal<>("10000");
+    f0 = udecimal::U8("10000.1");
+    f1 = udecimal::U8("10000");
 
     f2 = f0 * f1;
     assert(f2.to_string() == "100001000");
@@ -274,26 +399,26 @@ void testMulDiv() {
     f2 /= f1;
     assert(f2 == f0);
 
-    f0 = Decimal<>("2");
-    f1 = Decimal<>("3");
+    f0 = udecimal::U8("2");
+    f1 = udecimal::U8("3");
 
     f2 = f0 / f1;
     assert(f2.to_string() == "0.66666667");
 
-    f0 = Decimal<>("1000");
-    f1 = Decimal<>("10");
+    f0 = udecimal::U8("1000");
+    f1 = udecimal::U8("10");
 
     f2 = f0 / f1;
     assert(f2.to_string() == "100");
 
-    f0 = Decimal<>("1000");
-    f1 = Decimal<>("0.1");
+    f0 = udecimal::U8("1000");
+    f1 = udecimal::U8("0.1");
 
     f2 = f0 / f1;
     assert(f2.to_string() == "10000");
 
-    f0 = Decimal<>("1");
-    f1 = Decimal<>("0.1");
+    f0 = udecimal::U8("1");
+    f1 = udecimal::U8("0.1");
 
     f2 = f0 * f1;
     assert(f2.to_string() == "0.1");
@@ -301,13 +426,13 @@ void testMulDiv() {
 
 void testNegatives() {
     try {
-        Decimal<>("-1");
+        udecimal::U8("-1");
         assert(false);
     } catch (std::overflow_error& e) {
     }
 
-    Decimal<> f0("99");
-    Decimal<> f1("100");
+    udecimal::U8 f0("99");
+    udecimal::U8 f1("100");
 
     try {
         f0 - f1;
@@ -315,8 +440,8 @@ void testNegatives() {
     } catch (std::overflow_error& e) {
     }
 
-    f0 = Decimal<>(".001");
-    f1 = Decimal<>(".002");
+    f0 = udecimal::U8(".001");
+    f1 = udecimal::U8(".002");
 
     try {
         f0 - f1;
@@ -326,70 +451,70 @@ void testNegatives() {
 }
 
 void testOverflow() {
-    auto f0 = Decimal<>(1.12345678);
+    auto f0 = udecimal::U8(1.12345678);
     assert(f0.to_string() == "1.12345678");
 
-    f0 = Decimal<>(1.123456789123);
+    f0 = udecimal::U8(1.123456789123);
     assert(f0.to_string() == "1.12345679");
 
-    f0 = Decimal<>(1.0 / 3.0);
+    f0 = udecimal::U8(1.0 / 3.0);
     assert(f0.to_string() == "0.33333333");
 
-    f0 = Decimal<>(2.0 / 3.0);
+    f0 = udecimal::U8(2.0 / 3.0);
     assert(f0.to_string() == "0.66666667");
 }
 
 void testNaN() {
     try {
-        Decimal<>(std::nan(""));
+        udecimal::U8(std::nan(""));
         assert(false);
     } catch (std::invalid_argument& e) {
     }
 
     try {
-        Decimal<>("NaN");
+        udecimal::U8("NaN");
         assert(false);
     } catch (std::invalid_argument& e) {
     }
 
-    Decimal<> f0("0.0004096");
+    udecimal::U8 f0("0.0004096");
     assert(f0.to_string() == "0.0004096");
 }
 
 void testIntFrac() {
-    auto f0 = Decimal<>(1234.5678);
+    auto f0 = udecimal::U8(1234.5678);
     assert(f0.to_int() == 1234);
     assert(f0.to_frac() == .5678);
 }
 
 void testString() {
-    auto f0 = Decimal<>(1234.5678);
+    auto f0 = udecimal::U8(1234.5678);
     assert(f0.to_string() == "1234.5678");
 
-    f0 = Decimal<>(1234.0);
+    f0 = udecimal::U8(1234.0);
     assert(f0.to_string() == "1234");
 
-    f0 = Decimal<>("1.1");
+    f0 = udecimal::U8("1.1");
     std::string s = f0.to_string(2);
 
     assert(s == "1.10");
 
-    f0 = Decimal<>("1");
+    f0 = udecimal::U8("1");
     s = f0.to_string(2);
 
     assert(s == "1.00");
 
-    f0 = Decimal<>("1.123");
+    f0 = udecimal::U8("1.123");
     s = f0.to_string(2);
 
     assert(s == "1.12");
 
-    f0 = Decimal<>("1.123");
+    f0 = udecimal::U8("1.123");
     s = f0.to_string(2);
 
     assert(s == "1.12");
 
-    f0 = Decimal<>("1.123");
+    f0 = udecimal::U8("1.123");
     s = f0.to_string(0);
 
     assert(s == "1");
@@ -397,14 +522,14 @@ void testString() {
     s = f0.to_string(10);
     assert(s == "1.12300000");
 
-    f0 = Decimal<>(0.0);
+    f0 = udecimal::U8(0.0);
     s = f0.to_string(10);
     assert(s == "0.00000000");
 }
 
 void testRound() {
-    Decimal<> f0 = Decimal("1.12345");
-    Decimal<> f1 = f0.round(2);
+    udecimal::U8 f0 = udecimal::U8("1.12345");
+    udecimal::U8 f1 = f0.round(2);
 
     assert(f1.to_string() == "1.12");
 
@@ -417,31 +542,31 @@ void testRound() {
     f1 = f0.round(0);
     assert(f1.to_string() == "1");
 
-    f0 = Decimal("1.12345");
+    f0 = udecimal::U8("1.12345");
     f1 = f0.round(7);
     assert(f1.to_string() == "1.12345");
 
-    f0 = Decimal("0");
+    f0 = udecimal::U8("0");
     f1 = f0.round(4);
     assert(f1.to_string() == "0");
 
-    f0 = Decimal("0.0001234");
+    f0 = udecimal::U8("0.0001234");
     f1 = f0.round(2);
     assert(f1.to_string() == "0");
 
-    f0 = Decimal("0.6789");
+    f0 = udecimal::U8("0.6789");
     f1 = f0.round(2);
     assert(f1.to_string() == "0.68");
 
-    f0 = Decimal("0.0000");
+    f0 = udecimal::U8("0.0000");
     f1 = f0.round(2);
     assert(f1.to_string() == "0");
 
-    f0 = Decimal("123456789.987654321");
+    f0 = udecimal::U8("123456789.987654321");
     f1 = f0.round(3);
     assert(f1.to_string() == "123456789.988");
 
-    f0 = Decimal("123456789.987654321");
+    f0 = udecimal::U8("123456789.987654321");
     f1 = f0.round(0);
     assert(f1.to_string() == "123456789");
 
@@ -483,35 +608,35 @@ void testGeneralizedPlaces() {
 }
 
 void testConvertPrecision() {
-    Decimal<> f0("1.12345678");
+    udecimal::U8 f0("1.12345678");
     Decimal<2> f1 = f0.convert_precision<2>();
     assert(f1.to_string() == "1.12");
 
-    Decimal<> f2("100");
+    udecimal::U8 f2("100");
     Decimal<2> f3 = f2.convert_precision<2>();
     assert(f3.to_string() == "100");
 
     Decimal<2> f4("1.12");
-    Decimal<> f5 = f4.convert_precision<8>();
+    udecimal::U8 f5 = f4.convert_precision<8>();
     assert(f5.to_string() == "1.12");
 
-    Decimal<> f6("1.12345678");
-    Decimal<> f7 = f6.convert_precision<8>();
+    udecimal::U8 f6("1.12345678");
+    udecimal::U8 f7 = f6.convert_precision<8>();
     assert(f7.to_string() == "1.12345678");
 
-    Decimal<> f8("1e8");
+    udecimal::U8 f8("1e8");
     Decimal<2> f9 = f8.convert_precision<2>();
     assert(f9.to_string() == "100000000");
 
-    Decimal<> f10("0.000000012345678");
+    udecimal::U8 f10("0.000000012345678");
     Decimal<4> f11 = f10.convert_precision<4>();
     assert(f11.to_string() == "0");
 
-    Decimal<> f12("1.126");
+    udecimal::U8 f12("1.126");
     Decimal<2> f13 = f12.convert_precision<2>();
     assert(f13.to_string() == "1.13");
 
-    Decimal<> f14("1.124");
+    udecimal::U8 f14("1.124");
     Decimal<2> f15 = f14.convert_precision<2>();
     assert(f15.to_string() == "1.12");
 
@@ -595,14 +720,10 @@ void testDecodeBinaryData() {
     assert(extra_data == remaining_data);
 }
 
-int main() {
-    testBasicU8();
-    testBasicI8();
-    testEqual();
-    testFromExp();
-    testParse();
-    testNewI();
-    testMaxValue();
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+
     testToDouble();
     testInfinite();
     testAddSub();
