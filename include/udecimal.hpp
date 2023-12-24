@@ -31,6 +31,19 @@ enum Type {
     Unsigned
 };
 
+template <Type T>
+struct IntTypeMap;
+
+template <>
+struct IntTypeMap<Signed> {
+    using type = int64_t;
+};
+
+template <>
+struct IntTypeMap<Unsigned> {
+    using type = uint64_t;
+};
+
 // Decimal is a decimal precision for signed and unsigned numbers (defaults to 11.8 digits unsigned).
 template <int nPlaces = 8, Type S = Unsigned>
 class Decimal {
@@ -51,19 +64,6 @@ class Decimal {
         }
         return result;
     }
-
-    template <Type T>
-    struct IntTypeMap;
-
-    template <>
-    struct IntTypeMap<Signed> {
-        using type = int64_t;
-    };
-
-    template <>
-    struct IntTypeMap<Unsigned> {
-        using type = uint64_t;
-    };
 
     template <typename T>
     inline static T precomputed_pow_10(unsigned int exponent);
