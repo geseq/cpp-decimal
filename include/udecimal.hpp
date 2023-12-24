@@ -10,8 +10,10 @@
 #include <cwchar>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace udecimal {
@@ -127,6 +129,17 @@ class Decimal {
         return powers_of_10[exponent];
     }
 
+    static constexpr double computeMax() {
+        return static_cast<double>(const_pow<10, (digits - nPlaces)>() - 1) + (static_cast<double>(scale - 1) / static_cast<double>(scale));
+    }
+
+    static constexpr double computeMin() {
+        if constexpr (S == Signed) {
+            return -computeMax();
+        }
+        return 0;
+    }
+
    public:
     using IntType = typename IntTypeMap<S>::type;
 
@@ -136,8 +149,8 @@ class Decimal {
 
     static constexpr IntType scale = const_pow<10, nPlaces>();
     static constexpr int digits = std::numeric_limits<IntType>::digits10;
-    static constexpr double MAX = static_cast<double>(const_pow<10, (digits - nPlaces)>() - 1) + (static_cast<double>(scale - 1) / static_cast<double>(scale));
-    static constexpr double MIN = -MAX;
+    static constexpr double MAX = computeMax();
+    static constexpr double MIN = computeMin();
 
     static_assert(nPlaces < digits);
     static_assert(nPlaces > 0);
@@ -405,22 +418,27 @@ class Decimal {
     // A conversion moving the number of places left will throw an overflow error
     // if it is not possible
     template <int toPlaces>
-    Decimal<toPlaces> convert_precision() const {
+    Decimal<toPlaces, S> convert_precision() const {
         if constexpr (toPlaces == nPlaces) {
-            return Decimal<toPlaces>(*this);
+            return Decimal<toPlaces, S>(*this);
         } else if constexpr (toPlaces < nPlaces) {
             if constexpr (has_int128) {
-                return Decimal<toPlaces>(div(fp, scale), nPlaces);
+                return Decimal<toPlaces, S>(div(fp, scale), nPlaces);
             } else {
                 static constexpr IntType factor = scale / const_pow<10, toPlaces>();
-                return Decimal<toPlaces>(fp / factor);
+                return Decimal<toPlaces, S>(fp / factor);
             }
         } else {
             static constexpr IntType factor = const_pow<10, toPlaces>() / scale;
             if (unlikely(fp > std::numeric_limits<IntType>::max() / factor)) {
                 throw errOverflow;
             }
-            return Decimal<toPlaces>(fp * factor);
+            if constexpr (S == Signed) {
+                if (unlikely(fp < std::numeric_limits<IntType>::min() / factor)) {
+                    throw errOverflow;
+                }
+            }
+            return Decimal<toPlaces, S>(fp * factor);
         }
     }
 
@@ -630,8 +648,44 @@ const std::overflow_error Decimal<nPlaces, S>::errOverflow("decimal overflow");
 template <int nPlaces, Type S>
 const std::invalid_argument Decimal<nPlaces, S>::errInvalidInput("invalid input");
 
+// Unsigned
+using U1 = Decimal<1, Unsigned>;
+using U2 = Decimal<2, Unsigned>;
+using U3 = Decimal<3, Unsigned>;
+using U4 = Decimal<4, Unsigned>;
+using U5 = Decimal<5, Unsigned>;
+using U6 = Decimal<6, Unsigned>;
+using U7 = Decimal<7, Unsigned>;
 using U8 = Decimal<8, Unsigned>;
+using U9 = Decimal<9, Unsigned>;
+using U10 = Decimal<10, Unsigned>;
+using U11 = Decimal<11, Unsigned>;
+using U12 = Decimal<12, Unsigned>;
+using U13 = Decimal<13, Unsigned>;
+using U14 = Decimal<14, Unsigned>;
+using U15 = Decimal<15, Unsigned>;
+using U16 = Decimal<16, Unsigned>;
+using U17 = Decimal<17, Unsigned>;
+using U18 = Decimal<18, Unsigned>;
+
+// Signed
+using I1 = Decimal<1, Signed>;
+using I2 = Decimal<2, Signed>;
+using I3 = Decimal<3, Signed>;
+using I4 = Decimal<4, Signed>;
+using I5 = Decimal<5, Signed>;
+using I6 = Decimal<6, Signed>;
+using I7 = Decimal<7, Signed>;
 using I8 = Decimal<8, Signed>;
+using I9 = Decimal<9, Signed>;
+using I10 = Decimal<10, Signed>;
+using I11 = Decimal<11, Signed>;
+using I12 = Decimal<12, Signed>;
+using I13 = Decimal<13, Signed>;
+using I14 = Decimal<14, Signed>;
+using I15 = Decimal<15, Signed>;
+using I16 = Decimal<16, Signed>;
+using I17 = Decimal<17, Signed>;
 
 }  // namespace udecimal
 

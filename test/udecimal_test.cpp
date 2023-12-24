@@ -1032,50 +1032,123 @@ TEST_F(DecimalTest, RoundI8) {
     ASSERT_EQ(f1.to_string(), "-123456789");
 }
 
-/* ---- */
-
-TEST_F(DecimalTest, GeneralizedPlaces) {
-    Decimal<9> f0 = Decimal<9>("9999999999.12345678901234567890");
+TEST_F(DecimalTest, GeneralizedPlaces_Unsigned) {
+    udecimal::U9 f0 = udecimal::U9("9999999999.12345678901234567890");
     ASSERT_EQ(f0.scale, 1000000000);
     ASSERT_EQ(f0.MAX, 9999999999.999999999);
+    ASSERT_EQ(f0.MIN, 0);
     ASSERT_EQ(f0.zeros(), "000000000");
     ASSERT_EQ(f0.to_string(), "9999999999.123456789");
 
-    Decimal<10> f1 = Decimal<10>("999999999.1234567891234567890");
+    udecimal::U10 f1 = udecimal::U10("999999999.1234567891234567890");
     ASSERT_EQ(f1.scale, 10000000000);
     ASSERT_EQ(f1.MAX, 999999999.9999999999);
     ASSERT_EQ(f1.zeros(), "0000000000");
     ASSERT_EQ(f1.to_string(), "999999999.1234567891");
 
-    Decimal<11> f2 = Decimal<11>("99999999.12345678901234567890");
+    udecimal::U11 f2 = udecimal::U11("99999999.12345678901234567890");
     ASSERT_EQ(f2.scale, 100000000000);
     ASSERT_EQ(f2.MAX, 99999999.99999999999);
     ASSERT_EQ(f2.zeros(), "00000000000");
     ASSERT_EQ(f2.to_string(), "99999999.12345678901");
 
-    Decimal<18> f3 = Decimal<18>("9.12345678901234567890");
+    udecimal::U18 f3 = udecimal::U18("9.12345678901234567890");
     ASSERT_EQ(f3.scale, 1000000000000000000);
     ASSERT_EQ(f3.MAX, 9.999999999999999999);
     ASSERT_EQ(f3.zeros(), "000000000000000000");
     ASSERT_EQ(f3.to_string(), "9.123456789012345678");
 
-    Decimal<1> f4 = Decimal<1>("999999999999999999.12345678901234567890");
+    udecimal::U1 f4 = udecimal::U1("999999999999999999.12345678901234567890");
     ASSERT_EQ(f4.scale, 10);
     ASSERT_EQ(f4.MAX, 999999999999999999.9);
     ASSERT_EQ(f4.zeros(), "0");
     ASSERT_EQ(f4.to_string(), "999999999999999999.1");
 }
 
-TEST_F(DecimalTest, ConvertPrecision) {
+TEST_F(DecimalTest, GeneralizedPlaces_Signed_Positive) {
+    udecimal::I9 f0 = udecimal::I9("999999999.12345678901234567890");
+    ASSERT_EQ(f0.scale, 1000000000);
+    ASSERT_EQ(f0.MAX, 999999999.999999999);
+    ASSERT_EQ(f0.MIN, -999999999.999999999);
+    ASSERT_EQ(f0.zeros(), "000000000");
+    ASSERT_EQ(f0.to_string(), "999999999.123456789");
+
+    udecimal::I10 f1 = udecimal::I10("99999999.1234567891234567890");
+    ASSERT_EQ(f1.scale, 10000000000);
+    ASSERT_EQ(f1.MAX, 99999999.9999999999);
+    ASSERT_EQ(f1.MIN, -99999999.9999999999);
+    ASSERT_EQ(f1.zeros(), "0000000000");
+    ASSERT_EQ(f1.to_string(), "99999999.1234567891");
+
+    udecimal::I11 f2 = udecimal::I11("9999999.12345678901234567890");
+    ASSERT_EQ(f2.scale, 100000000000);
+    ASSERT_EQ(f2.MAX, 9999999.99999999999);
+    ASSERT_EQ(f2.MIN, -9999999.99999999999);
+    ASSERT_EQ(f2.zeros(), "00000000000");
+    ASSERT_EQ(f2.to_string(), "9999999.12345678901");
+
+    udecimal::I17 f3 = udecimal::I17("9.12345678901234567890");
+    ASSERT_EQ(f3.scale, 100000000000000000);
+    ASSERT_EQ(f3.MAX, 9.999999999999999999);
+    ASSERT_EQ(f3.MIN, -9.999999999999999999);
+    ASSERT_EQ(f3.zeros(), "00000000000000000");
+    ASSERT_EQ(f3.to_string(), "9.12345678901234567");
+
+    udecimal::I1 f4 = udecimal::I1("99999999999999999.12345678901234567890");
+    ASSERT_EQ(f4.scale, 10);
+    ASSERT_EQ(f4.MAX, 99999999999999999.9);
+    ASSERT_EQ(f4.MIN, -99999999999999999.9);
+    ASSERT_EQ(f4.zeros(), "0");
+    ASSERT_EQ(f4.to_string(), "99999999999999999.1");
+}
+
+TEST_F(DecimalTest, GeneralizedPlaces_Signed_Negative) {
+    udecimal::I9 f0 = udecimal::I9("-999999999.12345678901234567890");
+    ASSERT_EQ(f0.scale, 1000000000);
+    ASSERT_EQ(f0.MAX, 999999999.999999999);
+    ASSERT_EQ(f0.MIN, -999999999.999999999);
+    ASSERT_EQ(f0.zeros(), "000000000");
+    ASSERT_EQ(f0.to_string(), "-999999999.123456789");
+
+    udecimal::I10 f1 = udecimal::I10("-99999999.1234567891234567890");
+    ASSERT_EQ(f1.scale, 10000000000);
+    ASSERT_EQ(f1.MAX, 99999999.9999999999);
+    ASSERT_EQ(f1.MIN, -99999999.9999999999);
+    ASSERT_EQ(f1.zeros(), "0000000000");
+    ASSERT_EQ(f1.to_string(), "-99999999.1234567891");
+
+    udecimal::I11 f2 = udecimal::I11("-9999999.12345678901234567890");
+    ASSERT_EQ(f2.scale, 100000000000);
+    ASSERT_EQ(f2.MAX, 9999999.99999999999);
+    ASSERT_EQ(f2.MIN, -9999999.99999999999);
+    ASSERT_EQ(f2.zeros(), "00000000000");
+    ASSERT_EQ(f2.to_string(), "-9999999.12345678901");
+
+    udecimal::I17 f3 = udecimal::I17("-9.12345678901234567890");
+    ASSERT_EQ(f3.scale, 100000000000000000);
+    ASSERT_EQ(f3.MAX, 9.999999999999999999);
+    ASSERT_EQ(f3.MIN, -9.999999999999999999);
+    ASSERT_EQ(f3.zeros(), "00000000000000000");
+    ASSERT_EQ(f3.to_string(), "-9.12345678901234567");
+
+    udecimal::I1 f4 = udecimal::I1("-99999999999999999.12345678901234567890");
+    ASSERT_EQ(f4.scale, 10);
+    ASSERT_EQ(f4.MAX, 99999999999999999.9);
+    ASSERT_EQ(f4.MIN, -99999999999999999.9);
+    ASSERT_EQ(f4.zeros(), "0");
+    ASSERT_EQ(f4.to_string(), "-99999999999999999.1");
+}
+
+TEST_F(DecimalTest, ConvertPrecision_Unsigned) {
     udecimal::U8 f0("1.12345678");
-    Decimal<2> f1 = f0.convert_precision<2>();
+    udecimal::U2 f1 = f0.convert_precision<2>();
     ASSERT_EQ(f1.to_string(), "1.12");
 
     udecimal::U8 f2("100");
-    Decimal<2> f3 = f2.convert_precision<2>();
+    udecimal::U2 f3 = f2.convert_precision<2>();
     ASSERT_EQ(f3.to_string(), "100");
 
-    Decimal<2> f4("1.12");
+    udecimal::U2 f4("1.12");
     udecimal::U8 f5 = f4.convert_precision<8>();
     ASSERT_EQ(f5.to_string(), "1.12");
 
@@ -1084,49 +1157,151 @@ TEST_F(DecimalTest, ConvertPrecision) {
     ASSERT_EQ(f7.to_string(), "1.12345678");
 
     udecimal::U8 f8("1e8");
-    Decimal<2> f9 = f8.convert_precision<2>();
+    udecimal::U2 f9 = f8.convert_precision<2>();
     ASSERT_EQ(f9.to_string(), "100000000");
 
     udecimal::U8 f10("0.000000012345678");
-    Decimal<4> f11 = f10.convert_precision<4>();
+    udecimal::U4 f11 = f10.convert_precision<4>();
     ASSERT_EQ(f11.to_string(), "0");
 
     udecimal::U8 f12("1.126");
-    Decimal<2> f13 = f12.convert_precision<2>();
+    udecimal::U2 f13 = f12.convert_precision<2>();
     ASSERT_EQ(f13.to_string(), "1.13");
 
     udecimal::U8 f14("1.124");
-    Decimal<2> f15 = f14.convert_precision<2>();
+    udecimal::U2 f15 = f14.convert_precision<2>();
     ASSERT_EQ(f15.to_string(), "1.12");
 
-    Decimal<1> f16("12345678901234567");
-    Decimal<2> f17 = f16.convert_precision<2>();
+    udecimal::U1 f16("12345678901234567");
+    udecimal::U2 f17 = f16.convert_precision<2>();
     ASSERT_EQ(f16.to_string(), f17.to_string());
 
-    Decimal<18> f18("0.0000000000000000001");
-    Decimal<1> f19 = f18.convert_precision<1>();
+    udecimal::U18 f18("0.0000000000000000001");
+    udecimal::U1 f19 = f18.convert_precision<1>();
     ASSERT_EQ(f19.to_string(), "0");
 
-    Decimal<1> f20("123456789012345678");
+    udecimal::U1 f20("123456789012345678");
     ASSERT_THROW(f20.convert_precision<18>(), std::overflow_error);
 
-    Decimal<1> f22("123456789012345678");
+    udecimal::U1 f22("123456789012345678");
     ASSERT_THROW(f22.convert_precision<3>(), std::overflow_error);
 
-    Decimal<6> f24("12345.6789");
+    udecimal::U6 f24("12345.6789");
     ASSERT_THROW(f24.convert_precision<16>(), std::overflow_error);
 }
+
+TEST_F(DecimalTest, ConvertPrecision_Signed) {
+    udecimal::I8 f0("1.12345678");
+    udecimal::I2 f1 = f0.convert_precision<2>();
+    ASSERT_EQ(f1.to_string(), "1.12");
+
+    udecimal::I8 f2("100");
+    udecimal::I2 f3 = f2.convert_precision<2>();
+    ASSERT_EQ(f3.to_string(), "100");
+
+    udecimal::I2 f4("1.12");
+    udecimal::I8 f5 = f4.convert_precision<8>();
+    ASSERT_EQ(f5.to_string(), "1.12");
+
+    udecimal::I8 f6("1.12345678");
+    udecimal::I8 f7 = f6.convert_precision<8>();
+    ASSERT_EQ(f7.to_string(), "1.12345678");
+
+    udecimal::I8 f8("1e8");
+    udecimal::I2 f9 = f8.convert_precision<2>();
+    ASSERT_EQ(f9.to_string(), "100000000");
+
+    udecimal::I8 f10("0.000000012345678");
+    udecimal::I4 f11 = f10.convert_precision<4>();
+    ASSERT_EQ(f11.to_string(), "0");
+
+    udecimal::I8 f12("1.126");
+    udecimal::I2 f13 = f12.convert_precision<2>();
+    ASSERT_EQ(f13.to_string(), "1.13");
+
+    udecimal::I8 f14("1.124");
+    udecimal::I2 f15 = f14.convert_precision<2>();
+    ASSERT_EQ(f15.to_string(), "1.12");
+
+    udecimal::I1 f16("12345678901234567");
+    udecimal::I2 f17 = f16.convert_precision<2>();
+    ASSERT_EQ(f16.to_string(), f17.to_string());
+
+    udecimal::I17 f18("0.000000000000000001");
+    udecimal::I1 f19 = f18.convert_precision<1>();
+    ASSERT_EQ(f19.to_string(), "0");
+
+    udecimal::I1 f20("12345678901234567");
+    ASSERT_THROW(f20.convert_precision<17>(), std::overflow_error);
+
+    udecimal::I1 f22("12345678901234567");
+    ASSERT_THROW(f22.convert_precision<3>(), std::overflow_error);
+
+    udecimal::I6 f24("12345.6789");
+    ASSERT_THROW(f24.convert_precision<16>(), std::overflow_error);
+
+    udecimal::I8 nf0("-1.12345678");
+    udecimal::I2 nf1 = nf0.convert_precision<2>();
+    ASSERT_EQ(nf1.to_string(), "-1.12");
+
+    udecimal::I8 nf2("-100");
+    udecimal::I2 nf3 = nf2.convert_precision<2>();
+    ASSERT_EQ(nf3.to_string(), "-100");
+
+    udecimal::I2 nf4("-1.12");
+    udecimal::I8 nf5 = nf4.convert_precision<8>();
+    ASSERT_EQ(nf5.to_string(), "-1.12");
+
+    udecimal::I8 nf6("-1.12345678");
+    udecimal::I8 nf7 = nf6.convert_precision<8>();
+    ASSERT_EQ(nf7.to_string(), "-1.12345678");
+
+    udecimal::I8 nf8("-1e8");
+    udecimal::I2 nf9 = nf8.convert_precision<2>();
+    ASSERT_EQ(nf9.to_string(), "-100000000");
+
+    udecimal::I8 nf10("-0.000000012345678");
+    udecimal::I4 nf11 = nf10.convert_precision<4>();
+    ASSERT_EQ(nf11.to_string(), "0");
+
+    udecimal::I8 nf12("-1.126");
+    udecimal::I2 nf13 = nf12.convert_precision<2>();
+    ASSERT_EQ(nf13.to_string(), "-1.13");
+
+    udecimal::I8 nf14("-1.124");
+    udecimal::I2 nf15 = nf14.convert_precision<2>();
+    ASSERT_EQ(nf15.to_string(), "-1.12");
+
+    udecimal::I1 nf16("-12345678901234567");
+    udecimal::I2 nf17 = nf16.convert_precision<2>();
+    ASSERT_EQ(nf16.to_string(), nf17.to_string());
+
+    udecimal::I17 nf18("-0.000000000000000001");
+    udecimal::I1 nf19 = nf18.convert_precision<1>();
+    ASSERT_EQ(nf19.to_string(), "0");
+
+    udecimal::I1 nf20("-12345678901234567");
+    ASSERT_THROW(nf20.convert_precision<17>(), std::overflow_error);
+
+    udecimal::I1 nf22("-12345678901234567");
+    ASSERT_THROW(nf22.convert_precision<3>(), std::overflow_error);
+
+    udecimal::I6 nf24("-12345.6789");
+    ASSERT_THROW(nf24.convert_precision<16>(), std::overflow_error);
+}
+
+/* ---- */
 
 class DecimalEncodeDecodeTest : public ::testing::Test {
    protected:
     std::vector<uint8_t> extra_data{42, 24, 0};
 
-    template <int nPlaces>
+    template <int nPlaces, udecimal::Type S>
     void RunEncodeDecodeTest() {
-        udecimal::Decimal<nPlaces> original(123.456789);
+        udecimal::Decimal<nPlaces, S> original(123.456789);
         std::vector<uint8_t> binary_data = original.encode_binary();
 
-        udecimal::Decimal<nPlaces> result;
+        udecimal::Decimal<nPlaces, S> result;
         size_t offset = 0;
         result.decode_binary(binary_data, offset);
 
@@ -1146,13 +1321,13 @@ class DecimalEncodeDecodeTest : public ::testing::Test {
         ASSERT_EQ(binary_vec, expected);
     }
 
-    template <int nPlaces>
+    template <int nPlaces, udecimal::Type S>
     void RunDecodeBinaryDataTest() {
-        udecimal::Decimal<nPlaces> original(987.654321);
+        udecimal::Decimal<nPlaces, S> original(987.654321);
         std::vector<uint8_t> binary_data = original.encode_binary();
         binary_data.insert(binary_data.end(), extra_data.begin(), extra_data.end());
 
-        udecimal::Decimal<nPlaces> result;
+        udecimal::Decimal<nPlaces, S> result;
         size_t offset = result.decode_binary_data(binary_data);
 
         std::vector<uint8_t> remaining_data{binary_data.begin() + offset, binary_data.end()};
@@ -1163,17 +1338,27 @@ class DecimalEncodeDecodeTest : public ::testing::Test {
 };
 
 TEST_F(DecimalEncodeDecodeTest, EncodeDecode) {
-    RunEncodeDecodeTest<3>();
-    RunEncodeDecodeTest<6>();
-    RunEncodeDecodeTest<8>();
-    RunEncodeDecodeTest<11>();
+    RunEncodeDecodeTest<3, udecimal::Unsigned>();
+    RunEncodeDecodeTest<6, udecimal::Unsigned>();
+    RunEncodeDecodeTest<8, udecimal::Unsigned>();
+    RunEncodeDecodeTest<11, udecimal::Unsigned>();
+
+    RunEncodeDecodeTest<3, udecimal::Signed>();
+    RunEncodeDecodeTest<6, udecimal::Signed>();
+    RunEncodeDecodeTest<8, udecimal::Signed>();
+    RunEncodeDecodeTest<11, udecimal::Signed>();
 }
 
 TEST_F(DecimalEncodeDecodeTest, DecodeBinaryData) {
-    RunDecodeBinaryDataTest<3>();
-    RunDecodeBinaryDataTest<6>();
-    RunDecodeBinaryDataTest<8>();
-    RunDecodeBinaryDataTest<11>();
+    RunDecodeBinaryDataTest<3, udecimal::Unsigned>();
+    RunDecodeBinaryDataTest<6, udecimal::Unsigned>();
+    RunDecodeBinaryDataTest<8, udecimal::Unsigned>();
+    RunDecodeBinaryDataTest<11, udecimal::Unsigned>();
+
+    RunDecodeBinaryDataTest<3, udecimal::Signed>();
+    RunDecodeBinaryDataTest<6, udecimal::Signed>();
+    RunDecodeBinaryDataTest<8, udecimal::Signed>();
+    RunDecodeBinaryDataTest<11, udecimal::Signed>();
 }
 
 int main(int argc, char** argv) {
