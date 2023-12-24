@@ -44,6 +44,70 @@ struct IntTypeMap<Unsigned> {
     using type = uint64_t;
 };
 
+template <typename T>
+inline T precomputed_pow_10(unsigned int exponent);
+
+template <>
+inline uint64_t precomputed_pow_10<uint64_t>(unsigned int exponent) {
+    constexpr std::array<uint64_t, 20> powers_of_10 = {1,
+                                                       10,
+                                                       100,
+                                                       1000,
+                                                       10000,
+                                                       100000,
+                                                       1000000,
+                                                       10000000,
+                                                       100000000,
+                                                       1000000000,
+                                                       10000000000,
+                                                       100000000000,
+                                                       1000000000000,
+                                                       10000000000000,
+                                                       100000000000000,
+                                                       1000000000000000,
+                                                       10000000000000000,
+                                                       100000000000000000,
+                                                       1000000000000000000,
+                                                       10000000000000000000UL};
+
+    constexpr unsigned int max_exponent = powers_of_10.size() - 1;
+    if (unlikely(exponent > max_exponent)) {
+        throw std::invalid_argument("invalid exponent for unsigned decimal");
+    }
+
+    return powers_of_10[exponent];
+}
+
+template <>
+inline int64_t precomputed_pow_10<int64_t>(unsigned int exponent) {
+    constexpr std::array<int64_t, 19> powers_of_10 = {1,
+                                                      10,
+                                                      100,
+                                                      1000,
+                                                      10000,
+                                                      100000,
+                                                      1000000,
+                                                      10000000,
+                                                      100000000,
+                                                      1000000000,
+                                                      10000000000,
+                                                      100000000000,
+                                                      1000000000000,
+                                                      10000000000000,
+                                                      100000000000000,
+                                                      1000000000000000,
+                                                      10000000000000000,
+                                                      100000000000000000,
+                                                      1000000000000000000};
+
+    constexpr unsigned int max_exponent = powers_of_10.size() - 1;
+    if (unlikely(exponent > max_exponent)) {
+        throw std::invalid_argument("invalid exponent for signed decimal");
+    }
+
+    return powers_of_10[exponent];
+}
+
 // Decimal is a decimal precision for signed and unsigned numbers (defaults to 11.8 digits unsigned).
 template <int nPlaces = 8, Type S = Unsigned>
 class Decimal {
@@ -63,70 +127,6 @@ class Decimal {
             result *= base;
         }
         return result;
-    }
-
-    template <typename T>
-    inline static T precomputed_pow_10(unsigned int exponent);
-
-    template <>
-    inline static uint64_t precomputed_pow_10<uint64_t>(unsigned int exponent) {
-        constexpr std::array<uint64_t, 20> powers_of_10 = {1,
-                                                           10,
-                                                           100,
-                                                           1000,
-                                                           10000,
-                                                           100000,
-                                                           1000000,
-                                                           10000000,
-                                                           100000000,
-                                                           1000000000,
-                                                           10000000000,
-                                                           100000000000,
-                                                           1000000000000,
-                                                           10000000000000,
-                                                           100000000000000,
-                                                           1000000000000000,
-                                                           10000000000000000,
-                                                           100000000000000000,
-                                                           1000000000000000000,
-                                                           10000000000000000000UL};
-
-        constexpr unsigned int max_exponent = powers_of_10.size() - 1;
-        if (unlikely(exponent > max_exponent)) {
-            throw std::invalid_argument("invalid exponent for unsigned decimal");
-        }
-
-        return powers_of_10[exponent];
-    }
-
-    template <>
-    inline static int64_t precomputed_pow_10<int64_t>(unsigned int exponent) {
-        constexpr std::array<int64_t, 19> powers_of_10 = {1,
-                                                          10,
-                                                          100,
-                                                          1000,
-                                                          10000,
-                                                          100000,
-                                                          1000000,
-                                                          10000000,
-                                                          100000000,
-                                                          1000000000,
-                                                          10000000000,
-                                                          100000000000,
-                                                          1000000000000,
-                                                          10000000000000,
-                                                          100000000000000,
-                                                          1000000000000000,
-                                                          10000000000000000,
-                                                          100000000000000000,
-                                                          1000000000000000000};
-
-        constexpr unsigned int max_exponent = powers_of_10.size() - 1;
-        if (unlikely(exponent > max_exponent)) {
-            throw std::invalid_argument("invalid exponent for signed decimal");
-        }
-
-        return powers_of_10[exponent];
     }
 
     static constexpr double computeMax() {
