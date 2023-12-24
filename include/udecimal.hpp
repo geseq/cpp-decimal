@@ -29,103 +29,104 @@ enum Type {
     Unsigned
 };
 
-// Decimal is a decimal precision unsigned number (defaults to 11.8 digits).
-// IMPORTANT: this is not designed to be used for signed decimals.
+template <typename T, typename = void>
+struct has_int128_impl : std::false_type {};
+
+template <typename T>
+struct has_int128_impl<T, std::void_t<decltype(T(1) * T(1))>> : std::true_type {};
+
+constexpr bool has_int128 = has_int128_impl<__int128>::value;
+
+template <int base, int exponent>
+constexpr uint64_t const_pow() {
+    uint64_t result = 1;
+    for (int i = 0; i < exponent; ++i) {
+        result *= base;
+    }
+    return result;
+}
+
+template <Type T>
+struct IntTypeMap;
+
+template <>
+struct IntTypeMap<Signed> {
+    using type = int64_t;
+};
+
+template <>
+struct IntTypeMap<Unsigned> {
+    using type = uint64_t;
+};
+
+template <typename T>
+inline T precomputed_pow_10(unsigned int exponent);
+
+template <>
+inline uint64_t precomputed_pow_10<uint64_t>(unsigned int exponent) {
+    constexpr std::array<uint64_t, 20> powers_of_10 = {1,
+                                                       10,
+                                                       100,
+                                                       1000,
+                                                       10000,
+                                                       100000,
+                                                       1000000,
+                                                       10000000,
+                                                       100000000,
+                                                       1000000000,
+                                                       10000000000,
+                                                       100000000000,
+                                                       1000000000000,
+                                                       10000000000000,
+                                                       100000000000000,
+                                                       1000000000000000,
+                                                       10000000000000000,
+                                                       100000000000000000,
+                                                       1000000000000000000,
+                                                       10000000000000000000UL};
+
+    constexpr unsigned int max_exponent = powers_of_10.size() - 1;
+    if (unlikely(exponent > max_exponent)) {
+        throw std::invalid_argument("invalid exponent for unsigned decimal");
+    }
+
+    return powers_of_10[exponent];
+}
+
+template <>
+inline int64_t precomputed_pow_10<int64_t>(unsigned int exponent) {
+    constexpr std::array<int64_t, 19> powers_of_10 = {1,
+                                                      10,
+                                                      100,
+                                                      1000,
+                                                      10000,
+                                                      100000,
+                                                      1000000,
+                                                      10000000,
+                                                      100000000,
+                                                      1000000000,
+                                                      10000000000,
+                                                      100000000000,
+                                                      1000000000000,
+                                                      10000000000000,
+                                                      100000000000000,
+                                                      1000000000000000,
+                                                      10000000000000000,
+                                                      100000000000000000,
+                                                      1000000000000000000};
+
+    constexpr unsigned int max_exponent = powers_of_10.size() - 1;
+    if (unlikely(exponent > max_exponent)) {
+        throw std::invalid_argument("invalid exponent for signed decimal");
+    }
+
+    return powers_of_10[exponent];
+}
+
+// Decimal is a decimal precision for signed and unsigned numbers (defaults to 11.8 digits unsigned).
 template <int nPlaces = 8, Type S = Unsigned>
 class Decimal {
    private:
-    template <typename T, typename = void>
-    struct has_int128_impl : std::false_type {};
-
-    template <typename T>
-    struct has_int128_impl<T, std::void_t<decltype(T(1) * T(1))>> : std::true_type {};
-
-    constexpr static bool has_int128 = has_int128_impl<__int128>::value;
-
-    template <int base, int exponent>
-    constexpr static uint64_t const_pow() {
-        uint64_t result = 1;
-        for (int i = 0; i < exponent; ++i) {
-            result *= base;
-        }
-        return result;
-    }
-
-    template <Type T>
-    struct IntTypeMap;
-
-    template <>
-    struct IntTypeMap<Signed> {
-        using type = int64_t;
-    };
-
-    template <>
-    struct IntTypeMap<Unsigned> {
-        using type = uint64_t;
-    };
-
-    template <Type T>
-    decltype(auto) static precomputed_pow_10(unsigned int exponent);
-
-    template <>
-    decltype(auto) static precomputed_pow_10<Unsigned>(unsigned int exponent) {
-        constexpr static std::array<uint64_t, 20> powers_of_10 = {1,
-                                                                  10,
-                                                                  100,
-                                                                  1000,
-                                                                  10000,
-                                                                  100000,
-                                                                  1000000,
-                                                                  10000000,
-                                                                  100000000,
-                                                                  1000000000,
-                                                                  10000000000,
-                                                                  100000000000,
-                                                                  1000000000000,
-                                                                  10000000000000,
-                                                                  100000000000000,
-                                                                  1000000000000000,
-                                                                  10000000000000000,
-                                                                  100000000000000000,
-                                                                  1000000000000000000,
-                                                                  10000000000000000000UL};
-
-        if (unlikely(exponent >= powers_of_10.size())) {
-            throw std::invalid_argument("invalid exponent");
-        }
-
-        return powers_of_10[exponent];
-    }
-
-    template <>
-    decltype(auto) static precomputed_pow_10<Signed>(unsigned int exponent) {
-        constexpr static std::array<int64_t, 19> powers_of_10 = {1,
-                                                                 10,
-                                                                 100,
-                                                                 1000,
-                                                                 10000,
-                                                                 100000,
-                                                                 1000000,
-                                                                 10000000,
-                                                                 100000000,
-                                                                 1000000000,
-                                                                 10000000000,
-                                                                 100000000000,
-                                                                 1000000000000,
-                                                                 10000000000000,
-                                                                 100000000000000,
-                                                                 1000000000000000,
-                                                                 10000000000000000,
-                                                                 100000000000000000,
-                                                                 1000000000000000000};
-
-        if (unlikely(exponent >= powers_of_10.size())) {
-            throw std::invalid_argument("invalid exponent");
-        }
-
-        return powers_of_10[exponent];
-    }
-
    public:
     using IntType = typename IntTypeMap<S>::type;
 
@@ -221,7 +222,7 @@ class Decimal {
     // New returns a new fixed-point decimal, value * 10 ^ exp.
     static Decimal FromExp(IntType value, int exp) {
         if (exp >= 0) {
-            auto exp_mul = precomputed_pow_10<S>(exp);
+            auto exp_mul = precomputed_pow_10<IntType>(exp);
             return {mul(newI(value, 0), newI(exp_mul, 0))};
         }
 
@@ -361,7 +362,7 @@ class Decimal {
         IntType frac = fp % scale;
         IntType f0 = fp - frac;
 
-        auto pow = precomputed_pow_10<S>(nPlaces - n);
+        auto pow = precomputed_pow_10<IntType>(nPlaces - n);
         frac += pow / 2;  // rounding factor
         frac /= pow;
         frac *= pow;
@@ -412,9 +413,9 @@ class Decimal {
         int extracted_nPlaces = data[offset + 1];
         if (extracted_nPlaces != nPlaces) {
             if (extracted_nPlaces > nPlaces) {
-                value /= precomputed_pow_10<S>(extracted_nPlaces - nPlaces);
+                value /= precomputed_pow_10<IntType>(extracted_nPlaces - nPlaces);
             } else {
-                value *= precomputed_pow_10<S>(nPlaces - extracted_nPlaces);
+                value *= precomputed_pow_10<IntType>(nPlaces - extracted_nPlaces);
             }
         }
 
@@ -525,7 +526,7 @@ class Decimal {
 
     static IntType newI(IntType i, uint32_t n) {
         if (n > nPlaces) {
-            auto pow = precomputed_pow_10<S>(n - nPlaces);
+            auto pow = precomputed_pow_10<IntType>(n - nPlaces);
             if constexpr (S == Signed) {
                 if (i < 0) {
                     i -= pow / 2;  // rounding factor
@@ -538,7 +539,7 @@ class Decimal {
             i /= pow;
             n = nPlaces;
         }
-        i *= precomputed_pow_10<S>(nPlaces - n);
+        i *= precomputed_pow_10<IntType>(nPlaces - n);
         return i;
     }
 
