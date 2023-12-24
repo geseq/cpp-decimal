@@ -498,10 +498,10 @@ TEST_F(DecimalTest, MulDivU8) {
     ASSERT_EQ(f2, f0);
 
     f2 *= f1;
-    assert(f2.to_string() == "100001000");
+    ASSERT_EQ(f2.to_string(), "100001000");
 
     f2 /= f1;
-    assert(f2 == f0);
+    ASSERT_EQ(f2, f0);
 
     f0 = udecimal::U8("2");
     f1 = udecimal::U8("3");
@@ -550,6 +550,12 @@ TEST_F(DecimalTest, MulDivI8) {
     f2 = f2 / f1;
     ASSERT_EQ(f2, f0);
 
+    f2 *= f1;
+    ASSERT_EQ(f2.to_string(), "100001000");
+
+    f2 /= f1;
+    ASSERT_EQ(f2, f0);
+
     f0 = udecimal::I8("2");
     f1 = udecimal::I8("3");
 
@@ -594,6 +600,12 @@ TEST_F(DecimalTest, MulDivI8) {
     ASSERT_EQ(f2.to_string(), "-100001000");
 
     f2 = f2 / f1;
+    ASSERT_EQ(f2, f0);
+
+    f2 *= f1;
+    ASSERT_EQ(f2.to_string(), "-100001000");
+
+    f2 /= f1;
     ASSERT_EQ(f2, f0);
 
     f0 = udecimal::I8("-2");
@@ -642,6 +654,12 @@ TEST_F(DecimalTest, MulDivI8) {
     f2 = f2 / f1;
     ASSERT_EQ(f2, f0);
 
+    f2 *= f1;
+    ASSERT_EQ(f2.to_string(), "-100001000");
+
+    f2 /= f1;
+    ASSERT_EQ(f2, f0);
+
     f0 = udecimal::I8("2");
     f1 = udecimal::I8("-3");
 
@@ -686,6 +704,12 @@ TEST_F(DecimalTest, MulDivI8) {
     ASSERT_EQ(f2.to_string(), "100001000");
 
     f2 = f2 / f1;
+    ASSERT_EQ(f2, f0);
+
+    f2 *= f1;
+    ASSERT_EQ(f2.to_string(), "100001000");
+
+    f2 /= f1;
     ASSERT_EQ(f2, f0);
 
     f0 = udecimal::I8("-2");
