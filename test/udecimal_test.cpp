@@ -313,8 +313,6 @@ TEST_F(DecimalTest, MaxValueI8) {
     ASSERT_EQ(f0.to_string(), "-9999999999.12345678");
 }
 
-/* ---- */
-
 TEST_F(DecimalTest, ToDoubleU8) {
     auto f0 = udecimal::U8("123.456");
     auto f1 = udecimal::U8(123.456);
@@ -332,7 +330,38 @@ TEST_F(DecimalTest, ToDoubleU8) {
     ASSERT_EQ(f1, f2);
 }
 
-TEST_F(DecimalTest, Infinite) {
+TEST_F(DecimalTest, ToDoubleI8) {
+    auto f0 = udecimal::I8("123.456");
+    auto f1 = udecimal::I8(123.456);
+
+    ASSERT_EQ(f0, f1);
+
+    f1 = udecimal::I8(0.0001);
+    ASSERT_EQ(f1.to_string(), "0.0001");
+
+    f1 = udecimal::I8(".1");
+    ASSERT_EQ(f1.to_string(), "0.1");
+
+    auto f2 = udecimal::I8(udecimal::I8(f1.to_double()).to_string());
+    ASSERT_EQ(f1, f2);
+
+    f0 = udecimal::I8("-123.456");
+    f1 = udecimal::I8(-123.456);
+
+    ASSERT_EQ(f0, f1);
+
+    f1 = udecimal::I8(-0.0001);
+    ASSERT_EQ(f1.to_string(), "-0.0001");
+
+    f1 = udecimal::I8("-.1");
+    ASSERT_EQ(f1.to_string(), "-0.1");
+
+    auto b = udecimal::I8(f1.to_double()).to_string();
+    f2 = udecimal::I8(udecimal::I8(f1.to_double()).to_string());
+    ASSERT_EQ(f1, f2);
+}
+
+TEST_F(DecimalTest, InfiniteU8) {
     auto f0 = udecimal::U8("0.10");
     auto f1 = udecimal::U8(0.10);
 
@@ -351,7 +380,43 @@ TEST_F(DecimalTest, Infinite) {
     ASSERT_EQ(f2.to_string(), "1");
 }
 
-TEST_F(DecimalTest, AddSub) {
+TEST_F(DecimalTest, InfiniteI8) {
+    auto f0 = udecimal::I8("0.10");
+    auto f1 = udecimal::I8(0.10);
+
+    ASSERT_EQ(f0, f1);
+
+    auto f2 = udecimal::I8(0.0);
+    for (int i = 0; i < 3; i++) {
+        f2 = f2 + udecimal::I8(0.10);
+    }
+    ASSERT_EQ(f2.to_string(), "0.3");
+
+    f2 = udecimal::I8(0.0);
+    for (int i = 0; i < 10; i++) {
+        f2 = f2 + udecimal::I8(0.10);
+    }
+    ASSERT_EQ(f2.to_string(), "1");
+
+    f0 = udecimal::I8("-0.10");
+    f1 = udecimal::I8(-0.10);
+
+    ASSERT_EQ(f0, f1);
+
+    f2 = udecimal::I8(0.0);
+    for (int i = 0; i < 3; i++) {
+        f2 = f2 - udecimal::I8(0.10);
+    }
+    ASSERT_EQ(f2.to_string(), "-0.3");
+
+    f2 = udecimal::I8(0.0);
+    for (int i = 0; i < 10; i++) {
+        f2 = f2 - udecimal::I8(0.10);
+    }
+    ASSERT_EQ(f2.to_string(), "-1");
+}
+
+TEST_F(DecimalTest, AddSubU8) {
     udecimal::U8 f0 = udecimal::U8("1");
     udecimal::U8 f1 = udecimal::U8("0.3333333");
 
@@ -372,7 +437,45 @@ TEST_F(DecimalTest, AddSub) {
     ASSERT_EQ(f0.to_string(), "1");
 }
 
-TEST_F(DecimalTest, MulDiv) {
+TEST_F(DecimalTest, AddSubI8) {
+    udecimal::I8 f0 = udecimal::I8("1");
+    udecimal::I8 f1 = udecimal::I8("0.3333333");
+
+    udecimal::I8 f2 = f0 - f1;
+    f2 = f2 - f1;
+    f2 = f2 - f1;
+
+    ASSERT_EQ(f2.to_string(), "0.0000001");
+
+    f2 = f2 - udecimal::I8("0.0000001");
+    ASSERT_EQ(f2.to_string(), "0");
+
+    f0 = udecimal::I8("0");
+    for (int i = 0; i < 10; i++) {
+        f0 = f0 + udecimal::I8("0.1");
+    }
+    ASSERT_EQ(f0.to_string(), "1");
+
+    f0 = udecimal::I8("-1");
+    f1 = udecimal::I8("-0.3333333");
+
+    f2 = f0 - f1;
+    f2 = f2 - f1;
+    f2 = f2 - f1;
+
+    ASSERT_EQ(f2.to_string(), "-0.0000001");
+
+    f2 = f2 - udecimal::I8("-0.0000001");
+    ASSERT_EQ(f2.to_string(), "0");
+
+    f0 = udecimal::I8("0");
+    for (int i = 0; i < 10; i++) {
+        f0 = f0 + udecimal::I8("0.1");  // Note: Adding to a negative
+    }
+    ASSERT_EQ(f0.to_string(), "1");
+}
+
+TEST_F(DecimalTest, MulDivU8) {
     udecimal::U8 f0("123.456");
     udecimal::U8 f1("1000");
 
@@ -425,8 +528,194 @@ TEST_F(DecimalTest, MulDiv) {
     ASSERT_EQ(f2.to_string(), "0.1");
 }
 
-TEST_F(DecimalTest, Negatives) {
+TEST_F(DecimalTest, MulDivI8) {
+    udecimal::I8 f0("123.456");
+    udecimal::I8 f1("1000");
+
+    udecimal::I8 f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "123456");
+
+    f0 = udecimal::I8("123456");
+    f1 = udecimal::I8("0.0001");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "12.3456");
+
+    f0 = udecimal::I8("10000.1");
+    f1 = udecimal::I8("10000");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "100001000");
+
+    f2 = f2 / f1;
+    ASSERT_EQ(f2, f0);
+
+    f0 = udecimal::I8("2");
+    f1 = udecimal::I8("3");
+
+    f2 = f0 / f1;
+    ASSERT_EQ(f2.to_string(), "0.66666667");
+
+    f0 = udecimal::I8("1000");
+    f1 = udecimal::I8("10");
+
+    f2 = f0 / f1;
+    ASSERT_EQ(f2.to_string(), "100");
+
+    f0 = udecimal::I8("1000");
+    f1 = udecimal::I8("0.1");
+
+    f2 = f0 / f1;
+    ASSERT_EQ(f2.to_string(), "10000");
+
+    f0 = udecimal::I8("1");
+    f1 = udecimal::I8("0.1");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "0.1");
+
+    // Negative-Positive cases (resulting in negative)
+    f0 = udecimal::I8("-123.456");
+    f1 = udecimal::I8("1000");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "-123456");
+
+    f0 = udecimal::I8("-123456");
+    f1 = udecimal::I8("0.0001");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "-12.3456");
+
+    f0 = udecimal::I8("-10000.1");
+    f1 = udecimal::I8("10000");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "-100001000");
+
+    f2 = f2 / f1;
+    ASSERT_EQ(f2, f0);
+
+    f0 = udecimal::I8("-2");
+    f1 = udecimal::I8("3");
+
+    f2 = f0 / f1;
+    ASSERT_EQ(f2.to_string(), "-0.66666667");
+
+    f0 = udecimal::I8("-1000");
+    f1 = udecimal::I8("10");
+
+    f2 = f0 / f1;
+    ASSERT_EQ(f2.to_string(), "-100");
+
+    f0 = udecimal::I8("-1000");
+    f1 = udecimal::I8("0.1");
+
+    f2 = f0 / f1;
+    ASSERT_EQ(f2.to_string(), "-10000");
+
+    f0 = udecimal::I8("-1");
+    f1 = udecimal::I8("0.1");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "-0.1");
+
+    // Positive-Negative cases (resulting in negative)
+    f0 = udecimal::I8("123.456");
+    f1 = udecimal::I8("-1000");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "-123456");
+
+    f0 = udecimal::I8("123456");
+    f1 = udecimal::I8("-0.0001");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "-12.3456");
+
+    f0 = udecimal::I8("10000.1");
+    f1 = udecimal::I8("-10000");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "-100001000");
+
+    f2 = f2 / f1;
+    ASSERT_EQ(f2, f0);
+
+    f0 = udecimal::I8("2");
+    f1 = udecimal::I8("-3");
+
+    f2 = f0 / f1;
+    ASSERT_EQ(f2.to_string(), "-0.66666667");
+
+    f0 = udecimal::I8("1000");
+    f1 = udecimal::I8("-10");
+
+    f2 = f0 / f1;
+    ASSERT_EQ(f2.to_string(), "-100");
+
+    f0 = udecimal::I8("1000");
+    f1 = udecimal::I8("-0.1");
+
+    f2 = f0 / f1;
+    ASSERT_EQ(f2.to_string(), "-10000");
+
+    f0 = udecimal::I8("1");
+    f1 = udecimal::I8("-0.1");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "-0.1");
+
+    // Negative-Negative cases (resulting in positive)
+    f0 = udecimal::I8("-123.456");
+    f1 = udecimal::I8("-1000");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "123456");
+
+    f0 = udecimal::I8("-123456");
+    f1 = udecimal::I8("-0.0001");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "12.3456");
+
+    f0 = udecimal::I8("-10000.1");
+    f1 = udecimal::I8("-10000");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "100001000");
+
+    f2 = f2 / f1;
+    ASSERT_EQ(f2, f0);
+
+    f0 = udecimal::I8("-2");
+    f1 = udecimal::I8("-3");
+
+    f2 = f0 / f1;
+    ASSERT_EQ(f2.to_string(), "0.66666667");
+
+    f0 = udecimal::I8("-1000");
+    f1 = udecimal::I8("-10");
+
+    f2 = f0 / f1;
+    ASSERT_EQ(f2.to_string(), "100");
+
+    f0 = udecimal::I8("-1000");
+    f1 = udecimal::I8("-0.1");
+
+    f2 = f0 / f1;
+    ASSERT_EQ(f2.to_string(), "10000");
+
+    f0 = udecimal::I8("-1");
+    f1 = udecimal::I8("-0.1");
+
+    f2 = f0 * f1;
+    ASSERT_EQ(f2.to_string(), "0.1");
+}
+
+TEST_F(DecimalTest, NegativesU8) {
     ASSERT_THROW(udecimal::U8("-1"), std::overflow_error);
+    ASSERT_THROW(udecimal::U8(-1.0), std::overflow_error);
 
     udecimal::U8 f0("99");
     udecimal::U8 f1("100");
@@ -439,7 +728,22 @@ TEST_F(DecimalTest, Negatives) {
     ASSERT_THROW(f0 - f1, std::overflow_error);
 }
 
-TEST_F(DecimalTest, Overflow) {
+TEST_F(DecimalTest, NegativesI8) {
+    udecimal::I8 f0("-1");
+    udecimal::I8 f1(-1.0);
+
+    f0 = udecimal::I8("99");
+    f1 = udecimal::I8("100");
+
+    ASSERT_EQ(f0 - f1, udecimal::I8("-1"));
+
+    f0 = udecimal::I8(".001");
+    f1 = udecimal::I8(".002");
+
+    ASSERT_EQ(f0 - f1, udecimal::I8("-.001"));
+}
+
+TEST_F(DecimalTest, DecimalPrecisionTooLargeU8) {
     auto f0 = udecimal::U8(1.12345678);
     ASSERT_EQ(f0.to_string(), "1.12345678");
 
@@ -453,21 +757,64 @@ TEST_F(DecimalTest, Overflow) {
     ASSERT_EQ(f0.to_string(), "0.66666667");
 }
 
+TEST_F(DecimalTest, DecimalPrecisionTooLargeI8) {
+    auto f0 = udecimal::I8(1.12345678);
+    ASSERT_EQ(f0.to_string(), "1.12345678");
+
+    f0 = udecimal::I8(1.123456789123);
+    ASSERT_EQ(f0.to_string(), "1.12345679");
+
+    f0 = udecimal::I8(1.0 / 3.0);
+    ASSERT_EQ(f0.to_string(), "0.33333333");
+
+    f0 = udecimal::I8(2.0 / 3.0);
+    ASSERT_EQ(f0.to_string(), "0.66666667");
+
+    f0 = udecimal::I8(-1.12345678);
+    ASSERT_EQ(f0.to_string(), "-1.12345678");
+
+    f0 = udecimal::I8(-1.123456789123);
+    ASSERT_EQ(f0.to_string(), "-1.12345679");
+
+    f0 = udecimal::I8(-1.0 / 3.0);
+    ASSERT_EQ(f0.to_string(), "-0.33333333");
+
+    f0 = udecimal::I8(-2.0 / 3.0);
+    ASSERT_EQ(f0.to_string(), "-0.66666667");
+}
+
 TEST_F(DecimalTest, NaN) {
     ASSERT_THROW(udecimal::U8(std::nan("")), std::invalid_argument);
+    ASSERT_THROW(udecimal::I8(std::nan("")), std::invalid_argument);
+
     ASSERT_THROW(udecimal::U8("NaN"), std::invalid_argument);
+    ASSERT_THROW(udecimal::I8("NaN"), std::invalid_argument);
 
     udecimal::U8 f0("0.0004096");
     ASSERT_EQ(f0.to_string(), "0.0004096");
+
+    udecimal::I8 f1("0.0004096");
+    ASSERT_EQ(f1.to_string(), "0.0004096");
+
+    udecimal::I8 f2("-0.0004096");
+    ASSERT_EQ(f2.to_string(), "-0.0004096");
 }
 
 TEST_F(DecimalTest, IntFrac) {
     auto f0 = udecimal::U8(1234.5678);
     ASSERT_EQ(f0.to_int(), 1234);
     ASSERT_DOUBLE_EQ(f0.to_frac(), .5678);  // Use ASSERT_DOUBLE_EQ for comparing floating point numbers
+
+    auto f1 = udecimal::I8(1234.5678);
+    ASSERT_EQ(f1.to_int(), 1234);
+    ASSERT_DOUBLE_EQ(f1.to_frac(), .5678);  // Use ASSERT_DOUBLE_EQ for comparing floating point numbers
+
+    f1 = udecimal::I8(-1234.5678);
+    ASSERT_EQ(f1.to_int(), -1234);
+    ASSERT_DOUBLE_EQ(f1.to_frac(), -.5678);  // Use ASSERT_DOUBLE_EQ for comparing floating point numbers
 }
 
-TEST_F(DecimalTest, String) {
+TEST_F(DecimalTest, StringU8) {
     auto f0 = udecimal::U8(1234.5678);
     ASSERT_EQ(f0.to_string(), "1234.5678");
 
@@ -498,7 +845,65 @@ TEST_F(DecimalTest, String) {
     ASSERT_EQ(s, "0.00000000");
 }
 
-TEST_F(DecimalTest, Round) {
+TEST_F(DecimalTest, StringI8) {
+    auto f0 = udecimal::I8(1234.5678);
+    ASSERT_EQ(f0.to_string(), "1234.5678");
+
+    f0 = udecimal::I8(1234.0);
+    ASSERT_EQ(f0.to_string(), "1234");
+
+    f0 = udecimal::I8("1.1");
+    std::string s = f0.to_string(2);
+    ASSERT_EQ(s, "1.10");
+
+    f0 = udecimal::I8("1");
+    s = f0.to_string(2);
+    ASSERT_EQ(s, "1.00");
+
+    f0 = udecimal::I8("1.123");
+    s = f0.to_string(2);
+    ASSERT_EQ(s, "1.12");
+
+    f0 = udecimal::I8("1.123");
+    s = f0.to_string(0);
+    ASSERT_EQ(s, "1");
+
+    f0 = udecimal::I8("1.123");
+    s = f0.to_string(10);
+    ASSERT_EQ(s, "1.12300000");
+
+    f0 = udecimal::I8(0.0);
+    s = f0.to_string(10);
+    ASSERT_EQ(s, "0.00000000");
+
+    f0 = udecimal::I8(-1234.5678);
+    ASSERT_EQ(f0.to_string(), "-1234.5678");
+
+    f0 = udecimal::I8(-1234.0);
+    ASSERT_EQ(f0.to_string(), "-1234");
+
+    f0 = udecimal::I8("-1.1");
+    s = f0.to_string(2);
+    ASSERT_EQ(s, "-1.10");
+
+    f0 = udecimal::I8("-1");
+    s = f0.to_string(2);
+    ASSERT_EQ(s, "-1.00");
+
+    f0 = udecimal::I8("-1.123");
+    s = f0.to_string(2);
+    ASSERT_EQ(s, "-1.12");
+
+    f0 = udecimal::I8("-1.123");
+    s = f0.to_string(0);
+    ASSERT_EQ(s, "-1");
+
+    f0 = udecimal::I8("-1.123");
+    s = f0.to_string(10);
+    ASSERT_EQ(s, "-1.12300000");
+}
+
+TEST_F(DecimalTest, RoundU8) {
     udecimal::U8 f0 = udecimal::U8("1.12345");
     udecimal::U8 f1 = f0.round(2);
     ASSERT_EQ(f1.to_string(), "1.12");
@@ -544,6 +949,90 @@ TEST_F(DecimalTest, Round) {
     Decimal<18> f3 = f2.round(10);
     ASSERT_EQ(f3.to_string(), "0.0000000123");
 }
+
+TEST_F(DecimalTest, RoundI8) {
+    // Test cases for positive values
+    udecimal::I8 f0 = udecimal::I8("1.12345");
+    udecimal::I8 f1 = f0.round(2);
+    ASSERT_EQ(f1.to_string(), "1.12");
+
+    f1 = f0.round(5);
+    ASSERT_EQ(f1.to_string(), "1.12345");
+
+    f1 = f0.round(4);
+    ASSERT_EQ(f1.to_string(), "1.1235");
+
+    f1 = f0.round(0);
+    ASSERT_EQ(f1.to_string(), "1");
+
+    f0 = udecimal::I8("1.12345");
+    f1 = f0.round(7);
+    ASSERT_EQ(f1.to_string(), "1.12345");
+
+    f0 = udecimal::I8("0");
+    f1 = f0.round(4);
+    ASSERT_EQ(f1.to_string(), "0");
+
+    f0 = udecimal::I8("0.0001234");
+    f1 = f0.round(2);
+    ASSERT_EQ(f1.to_string(), "0");
+
+    f0 = udecimal::I8("0.6789");
+    f1 = f0.round(2);
+    ASSERT_EQ(f1.to_string(), "0.68");
+
+    f0 = udecimal::I8("0.0000");
+    f1 = f0.round(2);
+    ASSERT_EQ(f1.to_string(), "0");
+
+    f0 = udecimal::I8("123456789.987654321");
+    f1 = f0.round(3);
+    ASSERT_EQ(f1.to_string(), "123456789.988");
+
+    f0 = udecimal::I8("123456789.987654321");
+    f1 = f0.round(0);
+    ASSERT_EQ(f1.to_string(), "123456789");
+
+    Decimal<17, udecimal::Signed> f2 = Decimal<17, udecimal::Signed>("0.000000012345678");
+    Decimal<17, udecimal::Signed> f3 = f2.round(10);
+    ASSERT_EQ(f3.to_string(), "0.0000000123");
+
+    // Additional test cases for negative values
+    f0 = udecimal::I8("-1.12345");
+    f1 = f0.round(2);
+    ASSERT_EQ(f1.to_string(), "-1.12");
+
+    f1 = f0.round(5);
+    ASSERT_EQ(f1.to_string(), "-1.12345");
+
+    f1 = f0.round(4);
+    ASSERT_EQ(f1.to_string(), "-1.1235");
+
+    f1 = f0.round(0);
+    ASSERT_EQ(f1.to_string(), "-1");
+
+    f0 = udecimal::I8("-1.12345");
+    f1 = f0.round(7);
+    ASSERT_EQ(f1.to_string(), "-1.12345");
+
+    f0 = udecimal::I8("-0.0001234");
+    f1 = f0.round(2);
+    ASSERT_EQ(f1.to_string(), "0");
+
+    f0 = udecimal::I8("-0.6789");
+    f1 = f0.round(2);
+    ASSERT_EQ(f1.to_string(), "-0.68");
+
+    f0 = udecimal::I8("-123456789.987654321");
+    f1 = f0.round(3);
+    ASSERT_EQ(f1.to_string(), "-123456789.988");
+
+    f0 = udecimal::I8("-123456789.987654321");
+    f1 = f0.round(0);
+    ASSERT_EQ(f1.to_string(), "-123456789");
+}
+
+/* ---- */
 
 TEST_F(DecimalTest, GeneralizedPlaces) {
     Decimal<9> f0 = Decimal<9>("9999999999.12345678901234567890");
