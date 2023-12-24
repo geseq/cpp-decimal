@@ -31,6 +31,23 @@ enum Type {
     Unsigned
 };
 
+template <typename T, typename = void>
+struct has_int128_impl : std::false_type {};
+
+template <typename T>
+struct has_int128_impl<T, std::void_t<decltype(T(1) * T(1))>> : std::true_type {};
+
+constexpr bool has_int128 = has_int128_impl<__int128>::value;
+
+template <int base, int exponent>
+constexpr uint64_t const_pow() {
+    uint64_t result = 1;
+    for (int i = 0; i < exponent; ++i) {
+        result *= base;
+    }
+    return result;
+}
+
 template <Type T>
 struct IntTypeMap;
 
@@ -112,23 +129,6 @@ inline int64_t precomputed_pow_10<int64_t>(unsigned int exponent) {
 template <int nPlaces = 8, Type S = Unsigned>
 class Decimal {
    private:
-    template <typename T, typename = void>
-    struct has_int128_impl : std::false_type {};
-
-    template <typename T>
-    struct has_int128_impl<T, std::void_t<decltype(T(1) * T(1))>> : std::true_type {};
-
-    static constexpr bool has_int128 = has_int128_impl<__int128>::value;
-
-    template <int base, int exponent>
-    static constexpr uint64_t const_pow() {
-        uint64_t result = 1;
-        for (int i = 0; i < exponent; ++i) {
-            result *= base;
-        }
-        return result;
-    }
-
     static constexpr double computeMax() {
         return static_cast<double>(const_pow<10, (digits - nPlaces)>() - 1) + (static_cast<double>(scale - 1) / static_cast<double>(scale));
     }
