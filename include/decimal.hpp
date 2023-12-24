@@ -1,5 +1,5 @@
-#ifndef ES_DECIMAL_H
-#define ES_DECIMAL_H
+#ifndef CPP_DECIMAL_H
+#define CPP_DECIMAL_H
 
 #include <sys/types.h>
 
@@ -689,4 +689,4 @@ using I17 = Decimal<17, Signed>;
 
 }  // namespace decimal
 
-#endif  // ES_DECIMAL_H
+#endif  // CPP_DECIMAL_H
