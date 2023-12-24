@@ -1,5 +1,5 @@
-#ifndef UDECIMAL_H
-#define UDECIMAL_H
+#ifndef CPP_DECIMAL_H
+#define CPP_DECIMAL_H
 
 #include <sys/types.h>
 
@@ -16,7 +16,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace udecimal {
+namespace decimal {
 
 #if defined(__GNUC__) || defined(__clang__)
 #define likely(x) __builtin_expect(!!(x), 1)
@@ -687,6 +687,6 @@ using I15 = Decimal<15, Signed>;
 using I16 = Decimal<16, Signed>;
 using I17 = Decimal<17, Signed>;
 
-}  // namespace udecimal
+}  // namespace decimal
 
-#endif  // UDECIMAL_H
+#endif  // CPP_DECIMAL_H
