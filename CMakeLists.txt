@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
-set(CPP_DECIMAL cpp-decimal)
+set(CPP_DECIMAL decimal)
 
 project(${CPP_DECIMAL} LANGUAGES CXX)
 enable_testing()
