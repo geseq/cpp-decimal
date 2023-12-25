@@ -37,7 +37,7 @@ if (m < n) {
 }
 ```
 
-### More examplease
+### More examples
 ```cpp
 // 8 decimal places, unsigned
 auto f = decimal::U8("123.456"); // 123.456
