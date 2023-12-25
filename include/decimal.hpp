@@ -648,6 +648,12 @@ const std::overflow_error Decimal<nPlaces, S>::errOverflow("decimal overflow");
 template <int nPlaces, Type S>
 const std::invalid_argument Decimal<nPlaces, S>::errInvalidInput("invalid input");
 
+template <int nPlaces, Type S>
+std::ostream& operator<<(std::ostream& os, const Decimal<nPlaces, S>& d) {
+    os << d.to_string();
+    return os;
+}
+
 // Unsigned
 using U1 = Decimal<1, Unsigned>;
 using U2 = Decimal<2, Unsigned>;
