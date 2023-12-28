@@ -16,6 +16,8 @@
 #include <type_traits>
 #include <vector>
 
+// The decimal namespace provides functionalities for handling decimal arithmetic with
+// variable precision. It includes templates for signed and unsigned decimal types.
 namespace decimal {
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -31,6 +33,7 @@ enum Type {
     Unsigned
 };
 
+namespace detail {
 template <typename T, typename = void>
 struct has_int128_impl : std::false_type {};
 
@@ -41,6 +44,8 @@ constexpr bool has_int128 = has_int128_impl<__int128>::value;
 
 template <int base, int exponent>
 constexpr uint64_t const_pow() {
+    static_assert(base > 0, "Base must be positive");
+    static_assert(exponent >= 0, "Exponent cannot be negative");
     uint64_t result = 1;
     for (int i = 0; i < exponent; ++i) {
         result *= base;
@@ -125,12 +130,14 @@ inline int64_t precomputed_pow_10<int64_t>(unsigned int exponent) {
     return powers_of_10[exponent];
 }
 
+}  // namespace detail
+
 // Decimal is a decimal precision for signed and unsigned numbers (defaults to 11.8 digits unsigned).
 template <int nPlaces = 8, Type S = Unsigned>
 class Decimal {
    private:
     static constexpr double computeMax() {
-        return static_cast<double>(const_pow<10, (digits - nPlaces)>() - 1) + (static_cast<double>(scale - 1) / static_cast<double>(scale));
+        return static_cast<double>(detail::const_pow<10, (digits - nPlaces)>() - 1) + (static_cast<double>(scale - 1) / static_cast<double>(scale));
     }
 
     static constexpr double computeMin() {
@@ -141,13 +148,13 @@ class Decimal {
     }
 
    public:
-    using IntType = typename IntTypeMap<S>::type;
+    using IntType = typename detail::IntTypeMap<S>::type;
 
     IntType fp = 0;
 
     Decimal(IntType fp = 0) : fp(fp) {}
 
-    static constexpr IntType scale = const_pow<10, nPlaces>();
+    static constexpr IntType scale = detail::const_pow<10, nPlaces>();
     static constexpr int digits = std::numeric_limits<IntType>::digits10;
     static constexpr double MAX = computeMax();
     static constexpr double MIN = computeMin();
@@ -194,6 +201,7 @@ class Decimal {
     Decimal(IntType i, uint32_t n) { fp = newI(i, n); }
 
     Decimal(const std::string& s) {
+        // TODO: optimize string parsing algorithm
         if (s.find_first_of("eE") != std::string::npos) {
             double f = std::stod(s);
             fp = static_cast<IntType>(f * scale);
@@ -255,7 +263,7 @@ class Decimal {
     // New returns a new fixed-point decimal, value * 10 ^ exp.
     static Decimal FromExp(IntType value, int exp) {
         if (exp >= 0) {
-            auto exp_mul = precomputed_pow_10<IntType>(exp);
+            auto exp_mul = detail::precomputed_pow_10<IntType>(exp);
             return {mul(newI(value, 0), newI(exp_mul, 0))};
         }
 
@@ -395,7 +403,7 @@ class Decimal {
         IntType frac = fp % scale;
         IntType f0 = fp - frac;
 
-        auto pow = precomputed_pow_10<IntType>(nPlaces - n);
+        auto pow = detail::precomputed_pow_10<IntType>(nPlaces - n);
         if constexpr (S == Signed) {
             if (fp < 0) {
                 frac -= pow / 2;  // rounding factor
@@ -422,14 +430,14 @@ class Decimal {
         if constexpr (toPlaces == nPlaces) {
             return Decimal<toPlaces, S>(*this);
         } else if constexpr (toPlaces < nPlaces) {
-            if constexpr (has_int128) {
+            if constexpr (detail::has_int128) {
                 return Decimal<toPlaces, S>(div(fp, scale), nPlaces);
             } else {
-                static constexpr IntType factor = scale / const_pow<10, toPlaces>();
+                static constexpr IntType factor = scale / detail::const_pow<10, toPlaces>();
                 return Decimal<toPlaces, S>(fp / factor);
             }
         } else {
-            static constexpr IntType factor = const_pow<10, toPlaces>() / scale;
+            static constexpr IntType factor = detail::const_pow<10, toPlaces>() / scale;
             if (unlikely(fp > std::numeric_limits<IntType>::max() / factor)) {
                 throw errOverflow;
             }
@@ -459,9 +467,9 @@ class Decimal {
         int extracted_nPlaces = data[offset + 1];
         if (extracted_nPlaces != nPlaces) {
             if (extracted_nPlaces > nPlaces) {
-                value /= precomputed_pow_10<IntType>(extracted_nPlaces - nPlaces);
+                value /= detail::precomputed_pow_10<IntType>(extracted_nPlaces - nPlaces);
             } else {
-                value *= precomputed_pow_10<IntType>(nPlaces - extracted_nPlaces);
+                value *= detail::precomputed_pow_10<IntType>(nPlaces - extracted_nPlaces);
             }
         }
 
@@ -542,7 +550,7 @@ class Decimal {
         return result;
     }
 
-    using DivT = typename std::conditional<has_int128, IntType, double>::type;
+    using DivT = typename std::conditional<detail::has_int128, IntType, double>::type;
 
     static __int128 abs128(__int128 x) { return x < 0 ? -x : x; }
 
@@ -551,7 +559,7 @@ class Decimal {
             throw errDivByZero;
         }
 
-        if constexpr (has_int128) {
+        if constexpr (detail::has_int128) {
             __int128 temp = static_cast<__int128>(fp) * scale;
             __int128 remainder = temp % f0;
             temp /= f0;
@@ -580,7 +588,7 @@ class Decimal {
 
     static IntType newI(IntType i, uint32_t n) {
         if (n > nPlaces) {
-            auto pow = precomputed_pow_10<IntType>(n - nPlaces);
+            auto pow = detail::precomputed_pow_10<IntType>(n - nPlaces);
             if constexpr (S == Signed) {
                 if (i < 0) {
                     i -= pow / 2;  // rounding factor
@@ -593,7 +601,7 @@ class Decimal {
             i /= pow;
             n = nPlaces;
         }
-        i *= precomputed_pow_10<IntType>(nPlaces - n);
+        i *= detail::precomputed_pow_10<IntType>(nPlaces - n);
         return i;
     }
 
