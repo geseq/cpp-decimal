@@ -152,6 +152,8 @@ class Decimal {
 
     IntType fp = 0;
 
+    explicit Decimal(int i) { fp = static_cast<IntType>(i) * scale; }
+
     Decimal(IntType fp = 0) : fp(fp) {}
 
     static constexpr IntType scale = detail::const_pow<10, nPlaces>();

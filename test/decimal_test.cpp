@@ -1,11 +1,11 @@
+#include "decimal.hpp"
+
 #include <gtest/gtest.h>
 
 #include <cassert>
 #include <cstdint>
 #include <cwchar>
 #include <iostream>
-
-#include "decimal.hpp"
 
 using decimal::Decimal;
 
@@ -78,6 +78,40 @@ TEST_F(DecimalTest, BasicI8) {
 
     f0 = decimal::I8(.999);
     ASSERT_EQ(f0.to_string(), "0.999");
+}
+
+TEST_F(DecimalTest, IntConstructorU8) {
+    decimal::U8 f0(123);
+    ASSERT_EQ(f0.to_string(), "123");
+
+    decimal::U8 f1(0);
+    ASSERT_EQ(f1.to_string(), "0");
+
+    decimal::U8 f2(99999999);
+    ASSERT_EQ(f2.to_string(), "99999999");
+
+    ASSERT_EQ(f0.to_double(), 123.0);
+    ASSERT_EQ(f2.to_double(), 99999999.0);
+}
+
+TEST_F(DecimalTest, IntConstructorI8) {
+    decimal::I8 f0(123);
+    ASSERT_EQ(f0.to_string(), "123");
+
+    decimal::I8 f1(-123);
+    ASSERT_EQ(f1.to_string(), "-123");
+
+    decimal::I8 f2(0);
+    ASSERT_EQ(f2.to_string(), "0");
+
+    decimal::I8 f3(9999999);
+    ASSERT_EQ(f3.to_string(), "9999999");
+
+    decimal::I8 f4(-9999999);
+    ASSERT_EQ(f4.to_string(), "-9999999");
+
+    ASSERT_EQ(f0.to_double(), 123.0);
+    ASSERT_EQ(f1.to_double(), -123.0);
 }
 
 TEST_F(DecimalTest, EqualU8) {
